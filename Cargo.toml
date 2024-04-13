@@ -1,0 +1,13 @@
+[package]
+name = "compiler-lab"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+lalrpop-util = { version = "0.20.2", features = ["lexer"] }
+koopa = "0.0.7"
+
+[build-dependencies]
+lalrpop = "0.20.2"

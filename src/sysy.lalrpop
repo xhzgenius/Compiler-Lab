@@ -1,0 +1,51 @@
+// lalrpop 里的约定
+use crate::ast_def::*;
+grammar;
+
+// 约束 lexer 的行为
+match {
+  // 跳过空白符和注释
+  r"\s*" => {},
+  r"//[^\n\r]*[\n\r]*" => {},
+  // 块注释也要跳过——XHZ
+  r"/\*[^\n\r]*\*/" => {},
+  // 剩下的情况采用默认方式处理
+  _
+}
+
+// 定义 CompUnit, 其返回值类型为 String
+// parser 在解析完成后的行为是返回 FuncDef 的值
+pub CompUnit: CompUnit = <func_def: FuncDef> => CompUnit {func_def};
+
+// 同上, 不解释
+FuncDef: FuncDef = {
+  <return_type: Type> <func_id: Id> "(" ")" <block: Block> => {
+    FuncDef{return_type: return_type, func_id: func_id, block: block}
+  }
+}
+
+Type: Type = {
+  "int" => Type{type_name: "int".to_string()}
+}
+
+Block: Block = "{" <stmt: Stmt> "}" => Block{stmt: stmt};
+
+Stmt: Stmt =  {
+  "return" <number: Number> ";" => Stmt{stmt: StmtEnum::ReturnStmt(number)}
+}
+
+Number: Number = {
+  <int_const: IntConst> => Number{number: NumberEnum::IntConst(int_const)}
+}
+
+// 如果匹配到标识符, 就返回这个字符串
+// 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
+// 关于尖括号到底代表什么, 请 RTFM
+Id: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+
+// 对整数字面量的处理方式: 把匹配到的字符串按对应进制转换成数字
+IntConst: i32 = {
+  r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),
+  r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap(),
+  r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap(),
+}
