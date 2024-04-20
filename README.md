@@ -100,9 +100,17 @@ compiler -riscv 输入文件 -o 输出文件
 
 ##### 写自己的代码
 
-在 `ast_def` 和 `sysy.lalrpop` 中添加新的文法定义。
+在 `ast_def.rs` 和 `sysy.lalrpop` 中添加新的文法定义。改用了enum类型，配上rust的match表达式真的太tm好用了。只要能成功编译，几乎一遍过，简直是bug-free编程，太吊了。
 
-在 `build_ir` 中将定义的所有文法递归地转化成Koopa IR。
+在 `build_ir.rs` 中将定义的所有struct递归地转化成 Koopa IR 。
+
+递归地计算表达式的时候，将两棵子树算出来的结果（Koopa IR 中的 value）用Koopa IR中的BinaryOP计算出新的结果。
+
+我的递归函数没有返回值，所以用一个全局变量来记录子树的value，每次计算出子树的value就存到全局变量，然后返回到上层函数再取出来使用。
+
+##### 注意
+
+Koopa IR 没有逻辑 and 和 or 运算符，因此使用  `!=0 `先把整数转换成布尔值，再进行位运算的 `&&` 或者 `||` 操作。
 
 ##### 测试
 
