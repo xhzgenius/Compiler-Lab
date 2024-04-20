@@ -28,14 +28,67 @@ Type: Type = {
   "int" => Type{type_name: "int".to_string()}
 }
 
-Block: Block = "{" <stmt: Stmt> "}" => Block{stmt: stmt};
+Block: Block = "{" <stmt: Stmt> "}" => Block::Stmt(stmt);
 
 Stmt: Stmt =  {
-  "return" <number: Number> ";" => Stmt::ReturnStmt(number)
+  "return" <exp: Exp> ";" => Stmt::ReturnStmt(exp), 
+}
+
+Exp: Exp = {
+  <lor_exp: LOrExp> => Exp::LOrExp(lor_exp), 
+}
+
+LOrExp: LOrExp = {
+  <land_exp: LAndExp> => LOrExp::LAndExp(land_exp), 
+  <lor_exp: LOrExp> "||" <land_exp: LAndExp> => LOrExp::BinaryLOrExp(Box::new(lor_exp), land_exp), 
+}
+
+LAndExp: LAndExp = {
+  <eq_exp: EqExp> => LAndExp::EqExp(eq_exp), 
+  <land_exp: LAndExp> "&&" <eq_exp: EqExp> => LAndExp::BinaryLAndExp(Box::new(land_exp), eq_exp), 
+}
+
+EqExp: EqExp = {
+  <rel_exp: RelExp> => EqExp::RelExp(rel_exp), 
+  <eq_exp: EqExp> "==" <rel_exp: RelExp> => EqExp::BinaryEqExp(Box::new(eq_exp), rel_exp), 
+  <eq_exp: EqExp> "!=" <rel_exp: RelExp> => EqExp::BinaryUneqExp(Box::new(eq_exp), rel_exp), 
+}
+
+RelExp: RelExp = {
+  <add_exp: AddExp> => RelExp::AddExp(add_exp), 
+  <rel_exp: RelExp> "<" <add_exp: AddExp> => RelExp::BinaryLtExp(Box::new(rel_exp), add_exp), 
+  <rel_exp: RelExp> ">" <add_exp: AddExp> => RelExp::BinaryGtExp(Box::new(rel_exp), add_exp), 
+  <rel_exp: RelExp> "<=" <add_exp: AddExp> => RelExp::BinaryLeExp(Box::new(rel_exp), add_exp), 
+  <rel_exp: RelExp> ">=" <add_exp: AddExp> => RelExp::BinaryGeExp(Box::new(rel_exp), add_exp), 
+}
+
+AddExp: AddExp = {
+  <mul_exp: MulExp> => AddExp::MulExp(mul_exp), 
+  <add_exp: AddExp> "+" <mul_exp: MulExp> => AddExp::BinaryAddExp(Box::new(add_exp), mul_exp), 
+  <add_exp: AddExp> "-" <mul_exp: MulExp> => AddExp::BinarySubExp(Box::new(add_exp), mul_exp), 
+}
+
+MulExp: MulExp = {
+  <unary_exp: UnaryExp> => MulExp::UnaryExp(unary_exp), 
+  <mul_exp: MulExp> "*" <unary_exp: UnaryExp> => MulExp::BinaryMulExp(Box::new(mul_exp), unary_exp), 
+  <mul_exp: MulExp> "/" <unary_exp: UnaryExp> => MulExp::BinaryDivExp(Box::new(mul_exp), unary_exp), 
+  <mul_exp: MulExp> "%" <unary_exp: UnaryExp> => MulExp::BinaryModExp(Box::new(mul_exp), unary_exp), 
+}
+
+UnaryExp: UnaryExp = {
+  <primary_exp: PrimaryExp> => UnaryExp::PrimaryExp(primary_exp), 
+  "+" <unary_exp: UnaryExp> => UnaryExp::PlusUnaryExp(Box::new(unary_exp)), 
+  "-" <unary_exp: UnaryExp> => UnaryExp::MinusUnaryExp(Box::new(unary_exp)), 
+  "!" <unary_exp: UnaryExp> => UnaryExp::NotUnaryExp(Box::new(unary_exp)), 
+}
+
+PrimaryExp: PrimaryExp = {
+  "(" <exp: Exp> ")" => PrimaryExp::BracedExp(Box::new(exp)), 
+  <number: Number> => PrimaryExp::Number(number), 
 }
 
 Number: Number = {
-  <int_const: IntConst> => Number::IntConst(int_const)
+  <int_const: IntConst> => Number::IntConst(int_const), 
 }
 
 // 如果匹配到标识符, 就返回这个字符串

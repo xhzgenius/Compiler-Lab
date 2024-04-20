@@ -42,8 +42,9 @@ impl IRBuildable for FuncDef {
 
 impl IRBuildable for Block {
     fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
-        self.stmt.build(program, my_ir_generator_info)?;
-        Ok(())
+        match self {
+            Block::Stmt(stmt) => stmt.build(program, my_ir_generator_info)
+        }
     }
 }
 

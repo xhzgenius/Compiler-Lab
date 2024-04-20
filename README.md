@@ -80,11 +80,7 @@ compiler -koopa 输入文件 -o 输出文件
 
 ##### 测试
 
-> 假设你已经完成了 [Docker 的配置](https://pku-minic.github.io/online-doc/#/lv0-env-config/docker), 你可以执行:
-
-```
-docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv1 /root/compiler
-```
+> docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv1 /root/compiler
 
 > 你需要将 `项目目录` 替换为你的编译器项目在宿主机上的路径. 同时, 在运行测试前, 你需要确保你的编译器 (假设名称为 `compiler`) 能处理如下的命令行参数:
 
@@ -96,6 +92,13 @@ compiler -riscv 输入文件 -o 输出文件
 >
 > 为了同时兼容 Koopa IR 和 RISC-V 的测试, 你的编译器应该能够根据命令行参数的值, 判断当前正在执行何种测试, 然后决定只需要进行 IR 生成, 还是同时需要进行目标代码生成, 并向输出文件中输出 Koopa IR 或 RISC-V 汇编.
 
+
+
+#### Lv.3 表达式
+
+##### 写自己的代码
+
+在 `ast_def` 和 `sysy.lalrpop` 中添加新的文法定义。
 
 
 —END—
