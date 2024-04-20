@@ -162,17 +162,17 @@ impl IRBuildable for LOrExp {
                     &Number::IntConst(0),
                     program,
                     my_ir_generator_info,
-                    koopa::ir::BinaryOp::Or,
+                    koopa::ir::BinaryOp::NotEq,
                 )?;
                 let bool1 = my_ir_generator_info
                     .curr_value
                     .expect("No curr_value. Should not happen. ");
                 build_binary_from_buildables(
-                    &Number::IntConst(1),
+                    &Number::IntConst(0),
                     second_exp,
                     program,
                     my_ir_generator_info,
-                    koopa::ir::BinaryOp::And,
+                    koopa::ir::BinaryOp::NotEq,
                 )?;
                 let bool2 = my_ir_generator_info
                     .curr_value
@@ -203,17 +203,17 @@ impl IRBuildable for LAndExp {
                     &Number::IntConst(0),
                     program,
                     my_ir_generator_info,
-                    koopa::ir::BinaryOp::Or,
+                    koopa::ir::BinaryOp::NotEq,
                 )?;
                 let bool1 = my_ir_generator_info
                     .curr_value
                     .expect("No curr_value. Should not happen. ");
                 build_binary_from_buildables(
-                    &Number::IntConst(1),
+                    &Number::IntConst(0),
                     second_exp,
                     program,
                     my_ir_generator_info,
-                    koopa::ir::BinaryOp::And,
+                    koopa::ir::BinaryOp::NotEq,
                 )?;
                 let bool2 = my_ir_generator_info
                     .curr_value
