@@ -5,24 +5,24 @@ use crate::ast_def::*;
 
 use super::MyIRGeneratorInfo;
 
-pub trait Buildable {
-    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), &str>;
+pub trait IRBuildable {
+    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String>;
 }
 
-impl Buildable for CompUnit {
-    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), &str> {
+impl IRBuildable for CompUnit {
+    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
         self.func_def.build(program, my_ir_generator_info)?;
         Ok(())
     }
 }
 
-impl Buildable for FuncDef {
-    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), &str> {
+impl IRBuildable for FuncDef {
+    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
         let return_type = match self.return_type.type_name.as_str(){
             "int" => Ok(Type::get_i32()),
             _ => Err("Wrong return type")
         };
-        dbg!("Building function", &self);
+        // dbg!("Building function", &self);
         let func = program.new_func(
             FunctionData::with_param_names(
                 "@".to_string()+self.func_id.as_str(), 
@@ -40,15 +40,15 @@ impl Buildable for FuncDef {
     }
 }
 
-impl Buildable for Block {
-    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), &str> {
+impl IRBuildable for Block {
+    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
         self.stmt.build(program, my_ir_generator_info)?;
         Ok(())
     }
 }
 
-impl Buildable for Stmt {
-    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), &str> {
+impl IRBuildable for Stmt {
+    fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
         match &self.stmt {
             StmtEnum::ReturnStmt(number) => {
                 let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());

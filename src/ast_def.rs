@@ -36,11 +36,6 @@ pub struct Block {
 }
 
 #[derive(Debug)]
-pub enum StmtType {
-    RETURN,
-}
-
-#[derive(Debug)]
 pub struct Stmt {
     pub stmt: StmtEnum
 }

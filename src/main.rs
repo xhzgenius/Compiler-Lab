@@ -1,8 +1,10 @@
 mod ast_def;
 mod ir_builder;
+mod assembly_builder;
 
 use lalrpop_util::lalrpop_mod;
 use koopa::back::KoopaGenerator;
+use std::io::Write;
 
 // 引用 lalrpop 生成的解析器
 // 因为我们刚刚创建了 sysy.lalrpop, 所以模块名是 sysy
@@ -24,14 +26,28 @@ fn main() -> std::io::Result<()> {
   let ast = sysy::CompUnitParser::new().parse(&input).unwrap();
 
   // 输出解析得到的 AST
-  println!("AST:\n{:#?}", ast);
+  // println!("AST:\n{:#?}", ast);
 
-  // Generate in-memory Koopa IR (struct Program) using my IR builder. 
+  // Generate in-memory Koopa IR (struct Program) using my IR builder.
   let ir: koopa::ir::Program = ir_builder::generate_ir(&ast).expect("IR builder error");
 
-  // Convert in-memory Koopa IR to text, and write it to output file (hello.koopa). 
-  let mut text_generator = KoopaGenerator::new(Vec::new());
-  text_generator.generate_on(&ir).unwrap();
-  std::fs::write(output, text_generator.writer()).expect("Unable to write");
+  match mode.as_str() {
+    // Convert in-memory Koopa IR to text, and write it to output file (hello.koopa).
+    "-koopa" => {
+      let mut text_generator = KoopaGenerator::new(Vec::new());
+      text_generator.generate_on(&ir).unwrap();
+      std::fs::write(output, text_generator.writer())?;
+      Ok(())
+    }
+    "-riscv" => {
+      let assembly_codes = assembly_builder::generate_assembly(&ir).expect("Assembly builder error");
+      let mut output_file = std::fs::File::create(output)?;
+      for assembly_code in assembly_codes {
+        writeln!(output_file, "{}", assembly_code)?;
+      }
+      Ok(())
+    }
+    mode => Err(mode),
+  }.expect("Wrong mode");
   Ok(())
 }
