@@ -31,11 +31,11 @@ Type: Type = {
 Block: Block = "{" <stmt: Stmt> "}" => Block{stmt: stmt};
 
 Stmt: Stmt =  {
-  "return" <number: Number> ";" => Stmt{stmt: StmtEnum::ReturnStmt(number)}
+  "return" <number: Number> ";" => Stmt::ReturnStmt(number)
 }
 
 Number: Number = {
-  <int_const: IntConst> => Number{number: NumberEnum::IntConst(int_const)}
+  <int_const: IntConst> => Number::IntConst(int_const)
 }
 
 // 如果匹配到标识符, 就返回这个字符串

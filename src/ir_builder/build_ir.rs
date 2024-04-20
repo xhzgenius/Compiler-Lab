@@ -49,11 +49,11 @@ impl IRBuildable for Block {
 
 impl IRBuildable for Stmt {
     fn build(&self, program: &mut Program, my_ir_generator_info: &mut MyIRGeneratorInfo) -> Result<(), String> {
-        match &self.stmt {
-            StmtEnum::ReturnStmt(number) => {
+        match &self {
+            Stmt::ReturnStmt(number) => {
                 let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());
-                let return_value = match number.number {
-                    NumberEnum::IntConst(int_const) => curr_func_data.dfg_mut().new_value().integer(int_const),
+                let return_value = match number {
+                    Number::IntConst(int_const) => curr_func_data.dfg_mut().new_value().integer(*int_const),
                 };
                 let return_stmt = curr_func_data.dfg_mut().new_value().ret(Some(return_value));
                 curr_func_data.layout_mut().bb_mut(my_ir_generator_info.curr_block.unwrap()).insts_mut().extend([return_stmt]);

@@ -9,8 +9,14 @@
 //! FuncType  ::= "int";
 //!
 //! Block     ::= "{" Stmt "}";
-//! Stmt      ::= "return" Number ";";
-//! Number    ::= INT_CONST;
+//! Stmt      ::= "return" Exp ";";
+//! 
+//! Exp         ::= UnaryExp;
+//! UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp;
+//! UnaryOp     ::= "+" | "-" | "!";
+//! PrimaryExp  ::= "(" Exp ")" | Number;
+//! Number      ::= INT_CONST;
+//! 
 
 
 #[derive(Debug)]
@@ -36,22 +42,21 @@ pub struct Block {
 }
 
 #[derive(Debug)]
-pub struct Stmt {
-    pub stmt: StmtEnum
-}
-
-#[derive(Debug)]
-pub enum StmtEnum {
+pub enum Stmt {
     ReturnStmt(Number),
 }
 
 #[derive(Debug)]
-pub struct Number {
-    pub number: NumberEnum
+pub enum Exp {
+    UnaryExp, 
 }
 
 
 #[derive(Debug)]
-pub enum NumberEnum {
+pub struct UnaryExp {
+
+}
+#[derive(Debug)]
+pub enum Number {
     IntConst(i32),
 }
