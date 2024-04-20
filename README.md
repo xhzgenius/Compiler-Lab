@@ -36,6 +36,7 @@ cargo run -- -koopa hello.c -o hello.koopa
 
 更改 `sysy.lalrpop` ，在其中将返回值改为所定义的结构体。
 
+创建一个子模块 `ir_builder` ，负责生成IR，在 `mod.rs` 里定义解析IR的函数入口，新建一个 `build.rs` ，在里面为 `ast_def.rs` 里定义的结构体实现生成IR的方法。
 
 ##### 测试命令：
 
