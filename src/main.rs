@@ -26,7 +26,7 @@ fn main() -> std::io::Result<()> {
   let ast = sysy::CompUnitParser::new().parse(&input).unwrap();
 
   // 输出解析得到的 AST
-  // println!("AST:\n{:#?}", ast);
+  println!("AST:\n{:#?}", ast);
 
   // Generate in-memory Koopa IR (struct Program) using my IR builder.
   let ir: koopa::ir::Program = ir_builder::generate_ir(&ast).expect("IR builder error");

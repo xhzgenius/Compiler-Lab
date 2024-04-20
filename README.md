@@ -80,7 +80,9 @@ compiler -koopa 输入文件 -o 输出文件
 
 ##### 测试
 
-> docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv1 /root/compiler
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv1 /root/compiler
+```
 
 > 你需要将 `项目目录` 替换为你的编译器项目在宿主机上的路径. 同时, 在运行测试前, 你需要确保你的编译器 (假设名称为 `compiler`) 能处理如下的命令行参数:
 
@@ -99,6 +101,22 @@ compiler -riscv 输入文件 -o 输出文件
 ##### 写自己的代码
 
 在 `ast_def` 和 `sysy.lalrpop` 中添加新的文法定义。
+
+在 `build_ir` 中将定义的所有文法递归地转化成Koopa IR。
+
+##### 测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv3 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv3 /root/compiler
+```
 
 
 —END—

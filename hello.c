@@ -10,5 +10,5 @@ int main() {
 
   sbsbsb
   */
-  return 0;
+  return 1 + 2 * 3; // What the fuck? 
 }
