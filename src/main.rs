@@ -4,7 +4,6 @@ mod assembly_builder;
 
 use lalrpop_util::lalrpop_mod;
 use koopa::back::KoopaGenerator;
-use std::io::Write;
 
 // 引用 lalrpop 生成的解析器
 // 因为我们刚刚创建了 sysy.lalrpop, 所以模块名是 sysy
@@ -26,7 +25,7 @@ fn main() -> std::io::Result<()> {
   let ast = sysy::CompUnitParser::new().parse(&input).unwrap();
 
   // 输出解析得到的 AST
-  println!("AST:\n{:#?}", ast);
+  // dbg!("AST:\n{:#?}", &ast);
 
   // Generate in-memory Koopa IR (struct Program) using my IR builder.
   let ir: koopa::ir::Program = ir_builder::generate_ir(&ast).expect("IR builder error");
@@ -40,11 +39,11 @@ fn main() -> std::io::Result<()> {
       Ok(())
     }
     "-riscv" => {
-      let assembly_codes = assembly_builder::generate_assembly(&ir).expect("Assembly builder error");
-      let mut output_file = std::fs::File::create(output)?;
-      for assembly_code in assembly_codes {
-        writeln!(output_file, "{}", assembly_code)?;
-      }
+      let output_file = std::fs::File::create(output)?;
+      assembly_builder::generate_assembly(&ir, output_file).expect("Assembly builder error");
+      // for assembly_code in assembly_codes {
+      //   writeln!(output_file, "{}", assembly_code)?;
+      // }
       Ok(())
     }
     mode => Err(mode),

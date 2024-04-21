@@ -10,6 +10,8 @@
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev bash
 ```
 
+---
+
 ### Lab记录
 
 #### Lv.1 main函数
@@ -56,7 +58,7 @@ compiler -koopa 输入文件 -o 输出文件
 >
 > 关于实验环境/测试脚本的详细使用方法, 请参考[实验环境使用说明](https://pku-minic.github.io/online-doc/#/misc-app-ref/environment). 关于调试编译器的相关思路, 请参考[调试你的编译器](https://pku-minic.github.io/online-doc/#/misc-app-ref/environment?id=%e8%b0%83%e8%af%95%e4%bd%a0%e7%9a%84%e7%bc%96%e8%af%91%e5%99%a8). 关于测试脚本的工作原理, 请 [RTFSC](https://github.com/pku-minic/compiler-dev/blob/master/autotest/autotest).
 
-
+---
 
 #### Lv.2 初试目标代码生成
 
@@ -94,11 +96,13 @@ compiler -riscv 输入文件 -o 输出文件
 >
 > 为了同时兼容 Koopa IR 和 RISC-V 的测试, 你的编译器应该能够根据命令行参数的值, 判断当前正在执行何种测试, 然后决定只需要进行 IR 生成, 还是同时需要进行目标代码生成, 并向输出文件中输出 Koopa IR 或 RISC-V 汇编.
 
-
+---
 
 #### Lv.3 表达式
 
 ##### 写自己的代码
+
+###### 前端：IR生成
 
 在 `ast_def.rs` 和 `sysy.lalrpop` 中添加新的文法定义。改用了enum类型，配上rust的match表达式真的太tm好用了。只要能成功编译，几乎一遍过，简直是bug-free编程，太吊了。
 
@@ -108,9 +112,33 @@ compiler -riscv 输入文件 -o 输出文件
 
 我的递归函数没有返回值，所以用一个全局变量来记录子树的value，每次计算出子树的value就存到全局变量，然后返回到上层函数再取出来使用。
 
+###### 后端：目标代码生成
+
+在Lv. 3中，所有指令的计算结果都放在一个寄存器中。关于寄存器是否会被用完的问题，暂不考虑。
+
+| 寄存器     | ABI 名称      | 描述                          | 保存者   |
+| ---------- | ------------- | ----------------------------- | -------- |
+| `x0`     | `zero`      | 恒为 0                        | N/A      |
+| `x1`     | `ra`        | 返回地址                      | 调用者   |
+| `x2`     | `sp`        | 栈指针                        | 被调用者 |
+| `x3`     | `gp`        | 全局指针                      | N/A      |
+| `x4`     | `tp`        | 线程指针                      | N/A      |
+| `x5`     | `t0`        | **临时/备用链接寄存器** | 调用者   |
+| `x6-7`   | `t1-2`      | **临时寄存器**          | 调用者   |
+| `x8`     | `s0`/`fp` | 保存寄存器/帧指针             | 被调用者 |
+| `x9`     | `s1`        | 保存寄存器                    | 被调用者 |
+| `x10-11` | `a0-1`      | **函数参数/返回值**     | 调用者   |
+| `x12-17` | `a2-7`      | **函数参数**            | 调用者   |
+| `x18-27` | `s2-11`     | 保存寄存器                    | 被调用者 |
+| `x28-31` | `t3-6`      | **临时寄存器**          | 调用者   |
+
 ##### 注意
 
 Koopa IR 没有逻辑 and 和 or 运算符，因此使用  `!=0 `先把整数转换成布尔值，再进行位运算的 `&&` 或者 `||` 操作。
+
+RISCV 没有 le 和 ge ，因此转换成 not gt 和 not lt ；同时也没有 eq 和 neq ，因此先和自己异或，再用 seqz 或 snez 比较是否为0。
+
+最后一个本地样例的表达式比较多，因此要把不用的寄存器释放掉。维护一个表即可。
 
 ##### 测试
 
@@ -125,6 +153,10 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv3 /root/compiler
 ```
+
+---
+
+#### Lv. 4 常量和变量
 
 
 —END—
