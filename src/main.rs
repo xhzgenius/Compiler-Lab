@@ -22,7 +22,7 @@ fn main() -> std::io::Result<()> {
   let input = std::fs::read_to_string(input)?;
 
   // 调用 lalrpop 生成的 parser 解析输入文件
-  let ast = sysy::CompUnitParser::new().parse(&input).unwrap();
+  let ast = sysy::CompUnitParser::new().parse(&input).expect("Parse error");
 
   // 输出解析得到的 AST
   // dbg!("AST:\n{:#?}", &ast);

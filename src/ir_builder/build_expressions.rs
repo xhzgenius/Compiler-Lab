@@ -1,94 +1,9 @@
 //! Build a single component into Koopa IR.
 
-use crate::ast_def::*;
-use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
+use crate::ast_def::expressions::*;
+use koopa::ir::{builder_traits::*, Program};
 
-use super::MyIRGeneratorInfo;
-
-pub trait IRBuildable {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String>;
-}
-
-impl IRBuildable for CompUnit {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
-        self.func_def.build(program, my_ir_generator_info)?;
-        Ok(())
-    }
-}
-
-impl IRBuildable for FuncDef {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
-        let return_type = match self.return_type.type_name.as_str() {
-            "int" => Ok(Type::get_i32()),
-            _ => Err("Wrong return type"),
-        };
-        // dbg!("Building function", &self);
-        let func = program.new_func(FunctionData::with_param_names(
-            "@".to_string() + self.func_id.as_str(),
-            vec![],
-            return_type.expect("Error creating new function"),
-        ));
-        let func_data = program.func_mut(func);
-        let new_block = func_data
-            .dfg_mut()
-            .new_bb()
-            .basic_block(Some("%entry".to_string()));
-        func_data.layout_mut().bbs_mut().extend([new_block]);
-        my_ir_generator_info.curr_block = Some(new_block);
-        my_ir_generator_info.curr_func = Some(func);
-        self.block.build(program, my_ir_generator_info)?;
-        Ok(())
-    }
-}
-
-impl IRBuildable for Block {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
-        match self {
-            Block::Stmt(stmt) => stmt.build(program, my_ir_generator_info),
-        }
-    }
-}
-
-impl IRBuildable for Stmt {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
-        match &self {
-            Stmt::ReturnStmt(returned_exp) => {
-                returned_exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
-                let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());
-                let return_stmt = curr_func_data
-                    .dfg_mut()
-                    .new_value()
-                    .ret(my_ir_generator_info.curr_value); // Could not be None!
-                curr_func_data
-                    .layout_mut()
-                    .bb_mut(my_ir_generator_info.curr_block.unwrap())
-                    .insts_mut()
-                    .extend([return_stmt]);
-                Ok(())
-            }
-        }
-    }
-}
+use super::{MyIRGeneratorInfo, IRBuildable};
 
 impl IRBuildable for Exp {
     fn build(
@@ -159,7 +74,7 @@ impl IRBuildable for LOrExp {
             LOrExp::BinaryLOrExp(first_exp, second_exp) => {
                 build_binary_from_buildables(
                     &**first_exp,
-                    &Number::IntConst(0),
+                    &Number::INTCONST(0),
                     program,
                     my_ir_generator_info,
                     koopa::ir::BinaryOp::NotEq,
@@ -168,7 +83,7 @@ impl IRBuildable for LOrExp {
                     .curr_value
                     .expect("No curr_value. Should not happen. ");
                 build_binary_from_buildables(
-                    &Number::IntConst(0),
+                    &Number::INTCONST(0),
                     second_exp,
                     program,
                     my_ir_generator_info,
@@ -200,7 +115,7 @@ impl IRBuildable for LAndExp {
             LAndExp::BinaryLAndExp(first_exp, second_exp) => {
                 build_binary_from_buildables(
                     &**first_exp,
-                    &Number::IntConst(0),
+                    &Number::INTCONST(0),
                     program,
                     my_ir_generator_info,
                     koopa::ir::BinaryOp::NotEq,
@@ -209,7 +124,7 @@ impl IRBuildable for LAndExp {
                     .curr_value
                     .expect("No curr_value. Should not happen. ");
                 build_binary_from_buildables(
-                    &Number::IntConst(0),
+                    &Number::INTCONST(0),
                     second_exp,
                     program,
                     my_ir_generator_info,
@@ -365,14 +280,14 @@ impl IRBuildable for UnaryExp {
             UnaryExp::PrimaryExp(primary_exp) => primary_exp.build(program, my_ir_generator_info),
             UnaryExp::PlusUnaryExp(unary_exp) => unary_exp.build(program, my_ir_generator_info),
             UnaryExp::MinusUnaryExp(unary_exp) => build_binary_from_buildables(
-                &Number::IntConst(0),
+                &Number::INTCONST(0),
                 &**unary_exp,
                 program,
                 my_ir_generator_info,
                 koopa::ir::BinaryOp::Sub,
             ),
             UnaryExp::NotUnaryExp(unary_exp) => build_binary_from_buildables(
-                &Number::IntConst(0),
+                &Number::INTCONST(0),
                 &**unary_exp,
                 program,
                 my_ir_generator_info,
@@ -390,8 +305,20 @@ impl IRBuildable for PrimaryExp {
     ) -> Result<(), String> {
         match self {
             PrimaryExp::BracedExp(exp) => exp.build(program, my_ir_generator_info),
+            PrimaryExp::LVal(lval) => lval.build(program, my_ir_generator_info), 
             PrimaryExp::Number(number) => number.build(program, my_ir_generator_info),
         }
+    }
+}
+
+impl IRBuildable for LVal {
+    fn build(
+            &self,
+            program: &mut Program,
+            my_ir_generator_info: &mut MyIRGeneratorInfo,
+        ) -> Result<(), String> {
+        //TODO
+        todo!()
     }
 }
 
@@ -402,7 +329,7 @@ impl IRBuildable for Number {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<(), String> {
         match self {
-            Number::IntConst(int) => {
+            Number::INTCONST(int) => {
                 let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());
                 my_ir_generator_info.curr_value =
                     Some(curr_func_data.dfg_mut().new_value().integer(*int));

@@ -1,5 +1,5 @@
 // lalrpop 里的约定
-use crate::ast_def::*;
+use crate::ast_def::{*, declarations::*, statements::*, expressions::*, symbols::*};
 grammar;
 
 // 约束 lexer 的行为
@@ -17,22 +17,72 @@ match {
 // parser 在解析完成后的行为是返回 FuncDef 的值
 pub CompUnit: CompUnit = <func_def: FuncDef> => CompUnit {func_def};
 
+// ======================================================
+// Declarations
+// ======================================================
+
 // 同上, 不解释
 FuncDef: FuncDef = {
-  <return_type: Type> <func_id: Id> "(" ")" <block: Block> => {
-    FuncDef{return_type: return_type, func_id: func_id, block: block}
+  <return_type: FuncType> <func_id: IDENT> "(" ")" <block: Block> => {
+    FuncDef::Default(return_type, func_id, block)
   }
 }
 
-Type: Type = {
-  "int" => Type{type_name: "int".to_string()}
+Block: Block = "{" <block_items: (BlockItem)*> "}" => Block::Default(block_items); // Referenced from kira-rs. 
+
+BlockItem: BlockItem = {
+  <decl: Decl> => BlockItem::Decl(decl), 
+  <stmt: Stmt> => BlockItem::Stmt(stmt), 
 }
 
-Block: Block = "{" <stmt: Stmt> "}" => Block::Stmt(stmt);
+Decl: Decl = {
+  <c: ConstDecl> => Decl::ConstDecl(c), 
+  <v: VarDecl> => Decl::VarDecl(v), 
+}
+
+ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> ";" => {
+  let mut vec = Vec::<ConstDef>::new();
+  vec.push(c);
+  for cc in cs {
+    vec.push(cc);
+  }
+  ConstDecl::Default(b, vec)
+};
+
+ConstDef: ConstDef = <i: IDENT> "=" <c: ConstInitVal> => ConstDef::Default(i, c);
+
+ConstInitVal: ConstInitVal = <c: ConstExp> => ConstInitVal::ConstExp(c);
+
+ConstExp: ConstExp = <e: Exp> => ConstExp::Exp(e);
+
+VarDecl: VarDecl = <b: BType> <v: VarDef> <vs: ("," <VarDef>)*> ";" => {
+  let mut vec = Vec::<VarDef>::new();
+  vec.push(v);
+  for vv in vs {
+    vec.push(vv);
+  }
+  VarDecl::Default(b, vec)
+};
+
+VarDef: VarDef = {
+  <i: IDENT> => VarDef::WithoutInitVal(i), 
+  <i: IDENT> "=" <val: InitVal> => VarDef::WithInitVal(i, val), 
+}
+
+InitVal: InitVal = <e: Exp> => InitVal::Exp(e);
+
+// ======================================================
+// Statements
+// ======================================================
 
 Stmt: Stmt =  {
+  <l: LVal> "=" <e: Exp> ";" => Stmt::AssignStmt(l, e), 
   "return" <exp: Exp> ";" => Stmt::ReturnStmt(exp), 
 }
+
+// ======================================================
+// Expressions
+// ======================================================
 
 Exp: Exp = {
   <lor_exp: LOrExp> => Exp::LOrExp(lor_exp), 
@@ -84,21 +134,37 @@ UnaryExp: UnaryExp = {
 
 PrimaryExp: PrimaryExp = {
   "(" <exp: Exp> ")" => PrimaryExp::BracedExp(Box::new(exp)), 
+  <lval: LVal> => PrimaryExp::LVal(lval), 
   <number: Number> => PrimaryExp::Number(number), 
 }
 
-Number: Number = {
-  <int_const: IntConst> => Number::IntConst(int_const), 
+LVal: LVal = {
+  <i: IDENT> => LVal::IDENT(i), 
 }
 
-// 如果匹配到标识符, 就返回这个字符串
-// 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
-// 关于尖括号到底代表什么, 请 RTFM
-Id: String = r"[_a-zA-Z][_a-zA-Z0-9]*" => <>.to_string();
+Number: Number = {
+  <int_const: INTCONST> => Number::INTCONST(int_const), 
+}
 
 // 对整数字面量的处理方式: 把匹配到的字符串按对应进制转换成数字
-IntConst: i32 = {
+INTCONST: i32 = {
   r"[1-9][0-9]*" => i32::from_str_radix(<>, 10).unwrap(),
   r"0[0-7]*" => i32::from_str_radix(<>, 8).unwrap(),
   r"0[xX][0-9a-fA-F]+" => i32::from_str_radix(&<>[2..], 16).unwrap(),
+}
+
+//! ======================================================
+//! Symbols
+//! ======================================================
+// 如果匹配到标识符, 就返回这个字符串
+// 一对尖括号在此处指代的是正则表达式匹配到的字符串 (&str)
+// 关于尖括号到底代表什么, 请 RTFM
+IDENT: IDENT = r"[_a-zA-Z][_a-zA-Z0-9]*" => IDENT{content: <>.to_string()};
+
+FuncType: FuncType = {
+  "int" => FuncType{content: "int".to_string()}
+}
+
+BType: BType = {
+  "int" => BType{content: "int".to_string()}
 }

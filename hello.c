@@ -1,3 +1,6 @@
 int main() {
-  return 1+2*(3+4*5/6)+7*8-9;  // 看起来像个颜文字
+  const int x = 1 + 1;
+  int y = 10;
+  y = x + 1;
+  return x * y;
 }

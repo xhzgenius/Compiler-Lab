@@ -23,11 +23,7 @@ impl AssemblyBuildable for Program {
     }
 }
 
-/// Given a component of a binary op (e.g. an Integer or answer of another binary op),
-/// get its string representation in assembly code.
-///
-/// e.g. %1 = sub 0, %0, the lhs is converted into "0",
-/// and the rhs is converted into "t0" (its register).
+/// Given a value, find which register it should use. 
 fn get_reg(
     fd: &FunctionData,
     value: Value,
