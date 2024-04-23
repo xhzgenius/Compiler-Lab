@@ -14,9 +14,7 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
     let mut my_ir_generator_info = MyIRGeneratorInfo {
         curr_block: None,
         curr_func: None,
-        curr_value: None,
         symbol_table: HashMap::new(),
-        tmp_constants: None,
     };
     comp_unit.build(&mut program, &mut my_ir_generator_info)?;
     Ok(program)
@@ -26,9 +24,7 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
 pub struct MyIRGeneratorInfo {
     curr_block: Option<BasicBlock>,                  // Current block
     curr_func: Option<Function>,                     // Current function
-    curr_value: Option<Value>, // Current value (the target value of operations)
     symbol_table: HashMap<String, SymbolTableEntry>, // Symbol table: ident-(type, Value)
-    tmp_constants: Option<(i32, i32)>, // Temporary constant
 }
 
 pub enum SymbolTableEntry {
@@ -45,12 +41,19 @@ impl std::fmt::Debug for SymbolTableEntry {
     }
 }
 
+/// IR building result. If the expression is a constant expression, returns the i32 result. 
+/// Otherwise, returns the Koopa IR Value. 
+pub enum IRBuildResult {
+    Const(i32), 
+    Value(Value), 
+}
+
 pub trait IRBuildable {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String>;
+    ) -> Result<IRBuildResult, String>;
 }
 
 impl IRBuildable for CompUnit {
@@ -58,8 +61,36 @@ impl IRBuildable for CompUnit {
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
-        self.func_def.build(program, my_ir_generator_info)?;
-        Ok(())
+    ) -> Result<IRBuildResult, String> {
+        self.func_def.build(program, my_ir_generator_info)
     }
 }
+
+
+/// Helper function to build a new value.
+fn create_new_value<'a>(
+    program: &'a mut Program,
+    my_ir_generator_info: &'a mut MyIRGeneratorInfo,
+) -> koopa::ir::builder::LocalBuilder<'a> {
+    program
+        .func_mut(my_ir_generator_info.curr_func.unwrap())
+        .dfg_mut()
+        .new_value()
+}
+
+/// Helper function to insert instructions into the current function's data flow graph.
+fn insert_instructions<T>(
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+    instructions: T,
+) where
+    T: IntoIterator<Item = Value>,
+{
+    program
+        .func_mut(my_ir_generator_info.curr_func.unwrap())
+        .layout_mut()
+        .bb_mut(my_ir_generator_info.curr_block.unwrap())
+        .insts_mut()
+        .extend(instructions);
+}
+

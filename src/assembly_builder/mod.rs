@@ -52,7 +52,7 @@ impl MyAssemblyGeneratorInfo {
                 None => return i,
             }
         }
-        let choice = choice.unwrap();
+        let _choice = choice.unwrap();
         // Kick a value and store it to the stack. TODO.
         todo!()
     }

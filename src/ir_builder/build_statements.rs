@@ -3,46 +3,53 @@
 use crate::ast_def::statements::*;
 use koopa::ir::{builder_traits::*, Program};
 
-use super::{IRBuildable, MyIRGeneratorInfo};
+use super::{create_new_value, insert_instructions, IRBuildResult, IRBuildable, MyIRGeneratorInfo};
 
 impl IRBuildable for Stmt {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<(), String> {
+    ) -> Result<IRBuildResult, String> {
         match &self {
             Stmt::AssignStmt(lval, rhs_exp) => {
                 // Build LVal value.
-                lval.build(program, my_ir_generator_info)?;
-                let lval_ptr = my_ir_generator_info.curr_value.unwrap();
+                let result1 = lval.build(program, my_ir_generator_info)?;
+                let lval_ptr = match result1 {
+                    IRBuildResult::Const(_int) => {
+                        return Err(format!(
+                            "Constant expression ({:?}) should not be a left value! ",
+                            lval
+                        ))
+                    }
+                    IRBuildResult::Value(value) => value,
+                };
                 // Build RHS value.
-                rhs_exp.build(program, my_ir_generator_info)?;
-                let rhs_value = my_ir_generator_info.curr_value.unwrap();
+                let result2 = rhs_exp.build(program, my_ir_generator_info)?;
+                let rhs_value = match result2 {
+                    IRBuildResult::Const(int) => {
+                        create_new_value(program, my_ir_generator_info).integer(int)
+                    }
+                    IRBuildResult::Value(value) => value,
+                };
                 // Assign the RHS value into the new variable.
-                let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());
-                let dfg = curr_func_data.dfg_mut();
-                let store_inst = dfg.new_value().store(rhs_value, lval_ptr);
-                curr_func_data
-                    .layout_mut()
-                    .bb_mut(my_ir_generator_info.curr_block.unwrap())
-                    .insts_mut()
-                    .extend([lval_ptr, store_inst]);
-                Ok(())
+                let store_inst =
+                    create_new_value(program, my_ir_generator_info).store(rhs_value, lval_ptr);
+                insert_instructions(program, my_ir_generator_info, [lval_ptr, store_inst]);
+                Ok(IRBuildResult::Const(114514))
             }
             Stmt::ReturnStmt(returned_exp) => {
-                returned_exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
-                let curr_func_data = program.func_mut(my_ir_generator_info.curr_func.unwrap());
-                let return_stmt = curr_func_data
-                    .dfg_mut()
-                    .new_value()
-                    .ret(my_ir_generator_info.curr_value); // Could not be None!
-                curr_func_data
-                    .layout_mut()
-                    .bb_mut(my_ir_generator_info.curr_block.unwrap())
-                    .insts_mut()
-                    .extend([return_stmt]);
-                Ok(())
+                let result = returned_exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
+                let return_value = match result {
+                    IRBuildResult::Const(int) => {
+                        create_new_value(program, my_ir_generator_info).integer(int)
+                    }
+                    IRBuildResult::Value(value) => value,
+                };
+                let return_stmt =
+                    create_new_value(program, my_ir_generator_info).ret(Some(return_value));
+                insert_instructions(program, my_ir_generator_info, [return_stmt]);
+                Ok(IRBuildResult::Const(114514))
             }
         }
     }
