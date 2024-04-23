@@ -13,9 +13,9 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ##### 运行编译器：
 
 ```bash
-./target/debug/compiler-lab -koopa hello.c -o hello.koopa
+cargo run -- -koopa hello.c -o hello.koopa
 
-./target/debug/compiler-lab -riscv hello.c -o hello.asm
+cargo run -- -riscv hello.c -o hello.asm
 ```
 
 ---
@@ -181,6 +181,32 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
 由于文法太多，把所有文法拆成了三个部分，放在一个module `ast_def` 里面。
 
 把前端生成IR的代码也拆成了三个部分。
+
+维护一个HashMap作为符号表。符号表里记录了该符号的类型和对应的Koopa IR Value。
+
+##### 注意
+
+`dfg.new_value().load()` 函数返回的是一个含有值的 `Value` ，而 `dfg.new_value().alloc()` 和 `dfg.new_value().store()` 函数返回的是一个指针的 `Value` 。
+
+关于左值，当左值用来计算（成为PrimaryExp）的时候再 `load()` ，其它时候不要急着 `load()` ，将它当作指针。
+
+Koopa IR 是强类型的，所以当指针和值进行运算的时候会 `panic` 。
+
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv4 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv4 /root/compiler
+```
+
+---
 
 
 

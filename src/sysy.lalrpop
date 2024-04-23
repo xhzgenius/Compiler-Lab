@@ -1,5 +1,6 @@
 // lalrpop 里的约定
 use crate::ast_def::{*, declarations::*, statements::*, expressions::*, symbols::*};
+use koopa::ir::types::TypeKind;
 grammar;
 
 // 约束 lexer 的行为
@@ -162,9 +163,9 @@ INTCONST: i32 = {
 IDENT: IDENT = r"[_a-zA-Z][_a-zA-Z0-9]*" => IDENT{content: <>.to_string()};
 
 FuncType: FuncType = {
-  "int" => FuncType{content: "int".to_string()}
+  "int" => FuncType{content: TypeKind::Int32}
 }
 
 BType: BType = {
-  "int" => BType{content: "int".to_string()}
+  "int" => BType{content: TypeKind::Int32}
 }
