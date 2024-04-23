@@ -166,7 +166,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 ##### 写自己的代码
 
-###### 前端：IR生成
+###### 前端：IR生成（将所有常量当作变量处理，不计算常量表达式）
 
 在 `ast_def.rs` 和 `sysy.lalrpop` 中添加新的文法定义。
 
@@ -183,6 +183,12 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
 把前端生成IR的代码也拆成了三个部分。
 
 维护一个HashMap作为符号表。符号表里记录了该符号的类型和对应的Koopa IR Value。
+
+###### 计算常量表达式（包括非常量表达式中的常量部分）
+
+我修改了 `build() trait` 的返回值，现在它返回两种情况：一个 `i32` 常量，或者一个变量的 Koopa IR `Value` 。
+
+这样就可以递归地计算出那些编译期已知的常量部分。如果一个二元求值表达式的两个操作数都是 `i32` 常量，就直接计算结果，而不是把它们写进中间表示代码。
 
 ##### 注意
 
@@ -207,7 +213,5 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 
 ---
-
-
 
 —END—
