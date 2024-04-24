@@ -198,6 +198,8 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
 
 Koopa IR 是强类型的，所以当指针和值进行运算的时候会 `panic` 。
 
+**还有个坑：有个在线样例估计有多个** `return` **语句，需要忽略第一个** `return` **语句之后的所有内容，否则评测不通过。**
+
 ##### 本地测试
 
 测试 Koopa IR:
