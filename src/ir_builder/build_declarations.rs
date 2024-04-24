@@ -1,6 +1,7 @@
 //! Build a single component into Koopa IR.
 
 use crate::ast_def::declarations::*;
+use crate::ast_def::statements::*;
 use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
 
 use super::{
@@ -16,12 +17,13 @@ impl IRBuildable for FuncDef {
     ) -> Result<IRBuildResult, String> {
         let FuncDef::Default(return_type, func_id, block) = self;
         let return_type = Type::get(return_type.content.clone());
-        // dbg!("Building function", &self);
         let func = program.new_func(FunctionData::with_param_names(
-            "@".to_string() + func_id.content.as_str(),
+            format!("@{}", func_id.content),
             vec![],
             return_type,
         ));
+        // Insert the function name into symbol table. 
+        // TODO: Maybe we should use another symbol table for functions. 
         let func_data = program.func_mut(func);
         let new_block = func_data
             .dfg_mut()
@@ -43,6 +45,10 @@ impl IRBuildable for Block {
         let Block::Default(stmts) = self;
         for stmt in stmts {
             stmt.build(program, my_ir_generator_info)?;
+            // Ignore everything after the return statement. 
+            if let BlockItem::Stmt(Stmt::ReturnStmt(_)) = stmt {
+                break
+            }
         }
         Ok(IRBuildResult::Const(114514))
     }

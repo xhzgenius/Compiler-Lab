@@ -35,17 +35,17 @@ pub enum SymbolTableEntry {
 impl std::fmt::Debug for SymbolTableEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            SymbolTableEntry::Variable(tk, v) => write!(f, "Variable {}: {:?}", tk, v),
-            SymbolTableEntry::Constant(tk, v) => write!(f, "Constant {}: {:?}", tk, v),
+            SymbolTableEntry::Variable(tk, v) => write!(f, "Variable({}): {:?}", tk, v),
+            SymbolTableEntry::Constant(tk, v) => write!(f, "Constant({}): {:?}", tk, v),
         }
     }
 }
 
-/// IR building result. If the expression is a constant expression, returns the i32 result. 
-/// Otherwise, returns the Koopa IR Value. 
+/// IR building result. If the expression is a constant expression, returns the i32 result.
+/// Otherwise, returns the Koopa IR Value.
 pub enum IRBuildResult {
-    Const(i32), 
-    Value(Value), 
+    Const(i32),
+    Value(Value),
 }
 
 pub trait IRBuildable {
@@ -65,7 +65,6 @@ impl IRBuildable for CompUnit {
         self.func_def.build(program, my_ir_generator_info)
     }
 }
-
 
 /// Helper function to build a new value.
 fn create_new_value<'a>(
@@ -93,4 +92,3 @@ fn insert_instructions<T>(
         .insts_mut()
         .extend(instructions);
 }
-
