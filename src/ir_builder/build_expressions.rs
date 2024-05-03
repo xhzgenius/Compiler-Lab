@@ -319,7 +319,7 @@ impl IRBuildable for LVal {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         match self {
-            LVal::IDENT(ident) => match my_ir_generator_info.symbol_table.get(&ident.content) {
+            LVal::IDENT(ident) => match my_ir_generator_info.symbol_tables.get(&ident.content) {
                 Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRBuildResult::Value(*ptr)),
                 Some(SymbolTableEntry::Constant(_lval_type, values)) => {
                     Ok(IRBuildResult::Const(values[0]))

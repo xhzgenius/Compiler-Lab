@@ -14,7 +14,9 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
     let mut my_ir_generator_info = MyIRGeneratorInfo {
         curr_block: None,
         curr_func: None,
-        symbol_table: HashMap::new(),
+        symbol_tables: SymbolTableStack {
+            symbol_tables: vec![HashMap::new()],
+        },
     };
     comp_unit.build(&mut program, &mut my_ir_generator_info)?;
     Ok(program)
@@ -22,9 +24,38 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
 
 #[derive(Debug)]
 pub struct MyIRGeneratorInfo {
-    curr_block: Option<BasicBlock>,                  // Current block
-    curr_func: Option<Function>,                     // Current function
-    symbol_table: HashMap<String, SymbolTableEntry>, // Symbol table: ident-(type, Value)
+    curr_block: Option<BasicBlock>,  // Current block
+    curr_func: Option<Function>,     // Current function
+    symbol_tables: SymbolTableStack, // Symbol table: ident-(type, Value)
+}
+
+#[derive(Debug)]
+pub struct SymbolTableStack {
+    symbol_tables: Vec<HashMap<String, SymbolTableEntry>>, // Symbol table: ident-(type, Value)
+}
+
+impl SymbolTableStack {
+    fn get(&self, name: &String) -> Option<&SymbolTableEntry> {
+        for table in self.symbol_tables.iter().rev() {
+            if let Some(symbol) = table.get(name) {
+                return Some(symbol);
+            }
+        }
+        None
+    }
+    fn insert(&mut self, name: String, entry: SymbolTableEntry) {
+        let table = self.symbol_tables.last_mut().unwrap();
+        table.insert(name, entry);
+    }
+    fn add_new_table(&mut self) {
+        self.symbol_tables.push(HashMap::new());
+    }
+    fn delete_new_table(&mut self) {
+        self.symbol_tables.pop();
+    }
+    fn curr_depth(&self) -> usize {
+        self.symbol_tables.len()-1
+    }
 }
 
 pub enum SymbolTableEntry {

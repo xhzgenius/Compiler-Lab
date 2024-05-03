@@ -78,6 +78,8 @@ InitVal: InitVal = <e: Exp> => InitVal::Exp(e);
 
 Stmt: Stmt =  {
   <l: LVal> "=" <e: Exp> ";" => Stmt::AssignStmt(l, e), 
+  <exp: (Exp)?> ";" => Stmt::Exp(exp), 
+  <b: Block> => Stmt::Block(b), 
   "return" <exp: Exp> ";" => Stmt::ReturnStmt(exp), 
 }
 

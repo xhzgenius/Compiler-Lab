@@ -51,6 +51,16 @@ impl IRBuildable for Stmt {
                 insert_instructions(program, my_ir_generator_info, [return_stmt]);
                 Ok(IRBuildResult::Const(114514))
             }
+            Stmt::Block(block) => {
+                block.build(program, my_ir_generator_info)
+            }
+            Stmt::Exp(e) => {
+                if let Some(exp) = e {
+                    exp.build(program, my_ir_generator_info)
+                } else {
+                    Ok(IRBuildResult::Const(114514))
+                }
+            }
         }
     }
 }

@@ -226,4 +226,29 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 ---
 
+#### Lv. 5 语句块和作用域
+
+##### 写自己的代码
+
+非常简单，只需要把符号表搞成一个栈就行，在对 `Block` 进行 `build()` 的时候往符号表栈里加入一个新的表， `build()` 结束后删掉新的表。查找符号的时候从后往前查找即可。
+
+##### 注意
+
+Koopa IR 函数内部不能定义相同名字的变量，所以为了避免名称碰撞，要手动给变量重命名。我给变量名加了个后缀——嵌套的深度，也就是说 `@a` 会变为 `@a_1` ，`@a_2` ，... 。这里我规定最外层的全局变量深度为 `0` 。
+
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv5 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv5 /root/compiler
+```
+
+
 —END—

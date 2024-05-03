@@ -22,8 +22,8 @@ impl IRBuildable for FuncDef {
             vec![],
             return_type,
         ));
-        // Insert the function name into symbol table. 
-        // TODO: Maybe we should use another symbol table for functions. 
+        // Insert the function name into symbol table.
+        // TODO: Maybe we should use another symbol table for functions.
         let func_data = program.func_mut(func);
         let new_block = func_data
             .dfg_mut()
@@ -43,13 +43,15 @@ impl IRBuildable for Block {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         let Block::Default(stmts) = self;
+        my_ir_generator_info.symbol_tables.add_new_table();
         for stmt in stmts {
             stmt.build(program, my_ir_generator_info)?;
-            // Ignore everything after the return statement. 
+            // Ignore everything after the return statement.
             if let BlockItem::Stmt(Stmt::ReturnStmt(_)) = stmt {
-                break
+                break;
             }
         }
+        my_ir_generator_info.symbol_tables.delete_new_table();
         Ok(IRBuildResult::Const(114514))
     }
 }
@@ -94,7 +96,7 @@ impl IRBuildable for ConstDecl {
             // Add an entry in the symbol table.
             match result {
                 IRBuildResult::Const(int) => {
-                    my_ir_generator_info.symbol_table.insert(
+                    my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Constant(const_type.clone(), vec![int]),
                     );
@@ -161,10 +163,17 @@ impl IRBuildable for VarDecl {
                     program
                         .func_mut(my_ir_generator_info.curr_func.unwrap())
                         .dfg_mut()
-                        .set_value_name(var_ptr, Some(format!("@{}", ident.content)));
+                        .set_value_name(
+                            var_ptr,
+                            Some(format!(
+                                "@{}_{}",
+                                ident.content,
+                                my_ir_generator_info.symbol_tables.curr_depth()
+                            )),
+                        );
                     insert_instructions(program, my_ir_generator_info, [var_ptr, store_inst]);
                     // Add an entry in the symbol table.
-                    my_ir_generator_info.symbol_table.insert(
+                    my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Variable(var_type.clone(), var_ptr),
                     );
@@ -176,10 +185,17 @@ impl IRBuildable for VarDecl {
                     program
                         .func_mut(my_ir_generator_info.curr_func.unwrap())
                         .dfg_mut()
-                        .set_value_name(var_ptr, Some(format!("@{}", ident.content)));
+                        .set_value_name(
+                            var_ptr,
+                            Some(format!(
+                                "@{}_{}",
+                                ident.content,
+                                my_ir_generator_info.symbol_tables.curr_depth()
+                            )),
+                        );
                     insert_instructions(program, my_ir_generator_info, [var_ptr]);
                     // Add an entry in the symbol table.
-                    my_ir_generator_info.symbol_table.insert(
+                    my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Variable(var_type.clone(), var_ptr),
                     );
