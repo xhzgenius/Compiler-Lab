@@ -49,7 +49,7 @@ impl IRBuildable for Stmt {
                 let return_stmt =
                     create_new_value(program, my_ir_generator_info).ret(Some(return_value));
                 insert_instructions(program, my_ir_generator_info, [return_stmt]);
-                Ok(IRBuildResult::Const(114514))
+                Ok(IRBuildResult::Const(-1))
             }
             Stmt::Block(block) => {
                 block.build(program, my_ir_generator_info)

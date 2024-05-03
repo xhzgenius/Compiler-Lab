@@ -1,7 +1,6 @@
 //! Build a single component into Koopa IR.
 
 use crate::ast_def::declarations::*;
-use crate::ast_def::statements::*;
 use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
 
 use super::{
@@ -43,16 +42,31 @@ impl IRBuildable for Block {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         let Block::Default(stmts) = self;
+        let mut block_result = IRBuildResult::Const(114514);
         my_ir_generator_info.symbol_tables.add_new_table();
         for stmt in stmts {
-            stmt.build(program, my_ir_generator_info)?;
+            let result = stmt.build(program, my_ir_generator_info)?;
             // Ignore everything after the return statement.
-            if let BlockItem::Stmt(Stmt::ReturnStmt(_)) = stmt {
+            if let IRBuildResult::Const(-1) = result {
+                block_result = result;
                 break;
             }
         }
+        // for (_name, entry) in my_ir_generator_info
+        //     .symbol_tables
+        //     .symbol_tables
+        //     .last()
+        //     .unwrap()
+        // {
+        //     if let SymbolTableEntry::Variable(_tk, value) = entry {
+        //         program
+        //             .func_mut(my_ir_generator_info.curr_func.unwrap())
+        //             .dfg_mut()
+        //             .remove_value(*value);
+        //     }
+        // }
         my_ir_generator_info.symbol_tables.delete_new_table();
-        Ok(IRBuildResult::Const(114514))
+        Ok(block_result)
     }
 }
 
