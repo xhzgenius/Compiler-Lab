@@ -1,15 +1,6 @@
 int main() {
   int a = 1;
-  {
-    int a = -123;
-    -1;
-    return 0+1;
-  }
-  {
-    a = 2;
-    int a = 3;
-    a+114514;
-    return a;
-  }
-  return a;
+  1+2+3+4+5;
+  1+a;
+  a = 114514;
 }

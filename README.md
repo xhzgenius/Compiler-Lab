@@ -236,6 +236,8 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 Koopa IR 函数内部不能定义相同名字的变量，所以为了避免名称碰撞，要手动给变量重命名。我给变量名加了个后缀——嵌套的深度，也就是说 `@a` 会变为 `@a_1` ，`@a_2` ，... 。这里我规定最外层的全局变量深度为 `0` 。
 
+还要注意 `Block` 中可能会提前 `return` 的问题，这个也要处理。
+
 ##### 本地测试
 
 测试 Koopa IR:
@@ -249,6 +251,5 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv5 /root/compiler
 ```
-
 
 —END—
