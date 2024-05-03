@@ -2,6 +2,8 @@
 //! It converts the Koopa IR into assembly code.
 
 mod build_assembly;
+use std::collections::HashMap;
+
 use build_assembly::AssemblyBuildable;
 use koopa::ir::{Program, Value};
 
@@ -10,6 +12,7 @@ pub fn generate_assembly(program: &Program, output_file: std::fs::File) -> Resul
         curr_time: 0,
         register_user: [None; 32],
         register_used_time: [0; 32],
+        local_var_location_in_stack: HashMap::new(),
         output_file: output_file,
     };
     program.build(&mut my_agi)?;
@@ -29,6 +32,7 @@ pub struct MyAssemblyGeneratorInfo {
     curr_time: i32,
     register_user: [Option<Value>; 32],
     register_used_time: [i32; 32], // LRU registers
+    local_var_location_in_stack: HashMap<String, usize>,
     output_file: std::fs::File,
 }
 
@@ -38,7 +42,6 @@ impl MyAssemblyGeneratorInfo {
     /// Else returns the empty register and None.
     /// This function should not be called outside.
     fn get_usable_register(&mut self) -> usize {
-        self.curr_time += 1;
         let mut now_min = std::i32::MAX;
         let mut choice: Option<usize> = None;
         for i in REGISTER_FOR_TEMP {
@@ -57,16 +60,18 @@ impl MyAssemblyGeneratorInfo {
         todo!()
     }
 
-    /// Finds where this value is stored, either in the registers or in the stack.
-    fn find_using_register(&self, value: Value) -> Option<usize> {
+    /// Finds where this value is stored. 
+    /// If in stack, kick a value in a register and bring it back to the register. 
+    fn find_using_register(&self, value: Value) -> usize {
         for i in 0..32 {
             if let Some(v) = self.register_user[i] {
                 if v == value {
-                    return Some(i);
+                    return i;
                 }
             }
         }
-        None
+        // Value stored in the stack. Bring it back to a register. 
+        todo!()
     }
 
     /// Allocates a register for a value.
@@ -74,7 +79,7 @@ impl MyAssemblyGeneratorInfo {
     fn allocate_register(&mut self, value: Value) -> usize {
         let reg = self.get_usable_register();
         self.register_user[reg] = Some(value);
-        self.register_used_time[reg] = 0;
+        self.register_used_time[reg] = self.curr_time;
         reg
     }
 
