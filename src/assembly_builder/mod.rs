@@ -7,15 +7,8 @@ use std::collections::HashMap;
 use build_assembly::AssemblyBuildable;
 use koopa::ir::{Program, Value};
 
-pub fn generate_assembly(program: &Program, output_file: std::fs::File) -> Result<(), String> {
-    let mut my_agi = MyAssemblyGeneratorInfo {
-        curr_time: 0,
-        register_user: [None; 32],
-        register_used_time: [0; 32],
-        local_var_location_in_stack: HashMap::new(),
-        output_file: output_file,
-    };
-    program.build(&mut my_agi)?;
+pub fn generate_assembly(program: &Program, output_file: &mut std::fs::File) -> Result<(), String> {
+    program.build(output_file)?;
     Ok(())
 }
 
@@ -33,10 +26,17 @@ pub struct MyAssemblyGeneratorInfo {
     register_user: [Option<Value>; 32],
     register_used_time: [i32; 32], // LRU registers
     local_var_location_in_stack: HashMap<String, usize>,
-    output_file: std::fs::File,
 }
 
 impl MyAssemblyGeneratorInfo {
+    fn new() -> MyAssemblyGeneratorInfo {
+        MyAssemblyGeneratorInfo {
+            curr_time: 0,
+            register_user: [None; 32],
+            register_used_time: [0; 32],
+            local_var_location_in_stack: HashMap::new(),
+        }
+    }
     /// Finds a usable register.
     /// If all registers are being used, then kicks one and returns the kicked register and its former user (Value).
     /// Else returns the empty register and None.
@@ -60,8 +60,8 @@ impl MyAssemblyGeneratorInfo {
         todo!()
     }
 
-    /// Finds where this value is stored. 
-    /// If in stack, kick a value in a register and bring it back to the register. 
+    /// Finds where this value is stored.
+    /// If in stack, kick a value in a register and bring it back to the register.
     fn find_using_register(&self, value: Value) -> usize {
         for i in 0..32 {
             if let Some(v) = self.register_user[i] {
@@ -70,7 +70,7 @@ impl MyAssemblyGeneratorInfo {
                 }
             }
         }
-        // Value stored in the stack. Bring it back to a register. 
+        // Value stored in the stack. Bring it back to a register.
         todo!()
     }
 
@@ -83,7 +83,7 @@ impl MyAssemblyGeneratorInfo {
         reg
     }
 
-    /// Frees a register. 
+    /// Frees a register.
     fn free_register(&mut self, reg: usize) {
         self.register_user[reg] = None;
         self.register_used_time[reg] = 0;

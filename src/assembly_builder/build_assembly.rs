@@ -1,23 +1,23 @@
 //! Convert a single Koopa IR component into assembly code.
 
-use std::{io::Write, collections::HashMap};
+use std::io::Write;
 
 use super::{MyAssemblyGeneratorInfo, REGISTER_NAMES};
 use koopa::ir::{FunctionData, Program, Value};
 
 pub trait AssemblyBuildable {
-    fn build(&self, my_agi: &mut MyAssemblyGeneratorInfo) -> Result<(), String>;
+    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String>;
 }
 
 impl AssemblyBuildable for Program {
-    fn build(&self, my_agi: &mut MyAssemblyGeneratorInfo) -> Result<(), String> {
+    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String> {
         // Assembly code of global variables
         // TODO
 
         // Assembly code of functions
-        writeln!(my_agi.output_file, "  .text").expect("Write error. ");
+        writeln!(output_file, "  .text").expect("Write error. ");
         for &func in self.func_layout() {
-            self.func(func).build(my_agi)?;
+            self.func(func).build(output_file)?;
         }
         Ok(())
     }
@@ -28,6 +28,7 @@ fn get_reg(
     fd: &FunctionData,
     value: Value,
     my_agi: &mut MyAssemblyGeneratorInfo,
+    output_file: &mut std::fs::File,
 ) -> Result<usize, String> {
     match fd.dfg().value(value).kind() {
         koopa::ir::ValueKind::Integer(int) => {
@@ -39,7 +40,7 @@ fn get_reg(
                 // Allocate a new register for the constant integer.
                 let reg = my_agi.allocate_register(value);
                 writeln!(
-                    my_agi.output_file,
+                    output_file,
                     "  li\t{}, {}",
                     REGISTER_NAMES[reg],
                     int.value()
@@ -198,15 +199,12 @@ fn binary_op_to_assembly(
 }
 
 impl AssemblyBuildable for FunctionData {
-    fn build(&self, my_agi: &mut MyAssemblyGeneratorInfo) -> Result<(), String> {
-        writeln!(my_agi.output_file, "  .global {}", &self.name()[1..]).expect("Write error. ");
-        writeln!(my_agi.output_file, "{}:", &self.name()[1..]).expect("Write error. ");
+    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String> {
+        writeln!(output_file, "  .global {}", &self.name()[1..]).expect("Write error. ");
+        writeln!(output_file, "{}:", &self.name()[1..]).expect("Write error. ");
 
         // Clear register usages when entering the function.
-        my_agi.curr_time = 0;
-        my_agi.register_used_time = [0; 32];
-        my_agi.register_user = [None; 32];
-        my_agi.local_var_location_in_stack = HashMap::new();
+        let mut my_agi = MyAssemblyGeneratorInfo::new();
 
         // In my compiler, every defined local variable (like "@y = alloc i32") has its place in memory.
         // Temporary values are stored in registers.
@@ -234,11 +232,10 @@ impl AssemblyBuildable for FunctionData {
 
         // Function prologue: change the stack pointer.
         if local_var_size <= 2048 {
-            writeln!(my_agi.output_file, "  addi\tsp, sp, -{}", local_var_size)
-                .expect("Write error. ");
+            writeln!(output_file, "  addi\tsp, sp, -{}", local_var_size).expect("Write error. ");
         } else {
             writeln!(
-                my_agi.output_file,
+                output_file,
                 "  li\tt0, -{}\n  add\tsp, sp, t0",
                 local_var_size
             )
@@ -264,13 +261,13 @@ impl AssemblyBuildable for FunctionData {
                                 match return_value_data.kind() {
                                     // Integer return value
                                     koopa::ir::ValueKind::Integer(int) => {
-                                        writeln!(my_agi.output_file, "  li\ta0, {}", int.value())
+                                        writeln!(output_file, "  li\ta0, {}", int.value())
                                             .expect("Write error. ");
                                     }
                                     // Other return values (result of binary expressions or left values)
                                     _ => {
                                         writeln!(
-                                            my_agi.output_file,
+                                            output_file,
                                             "  mv\ta0, {}",
                                             REGISTER_NAMES
                                                 [my_agi.find_using_register(return_value)]
@@ -285,14 +282,14 @@ impl AssemblyBuildable for FunctionData {
 
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
-                        let reg1 = get_reg(self, binary.lhs(), my_agi)?;
-                        let reg2 = get_reg(self, binary.rhs(), my_agi)?;
+                        let reg1 = get_reg(self, binary.lhs(), &mut my_agi, output_file)?;
+                        let reg2 = get_reg(self, binary.rhs(), &mut my_agi, output_file)?;
                         my_agi.free_register(reg1);
                         my_agi.free_register(reg2);
                         // Allocate a register for result. It can overwrite lhs or rhs.
                         let reg_ans = my_agi.allocate_register(value);
                         writeln!(
-                            my_agi.output_file,
+                            output_file,
                             "{}",
                             binary_op_to_assembly(binary, reg_ans, reg1, reg2)
                         )
@@ -304,7 +301,7 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        let stored_reg = get_reg(self, store.value(), my_agi)?;
+                        let stored_reg = get_reg(self, store.value(), &mut my_agi, output_file)?;
                         let local_var_name = self
                             .dfg()
                             .value(store.dest())
@@ -323,7 +320,7 @@ impl AssemblyBuildable for FunctionData {
                             );
                         if offset <= 2047 {
                             writeln!(
-                                my_agi.output_file,
+                                output_file,
                                 "  sw\t{}, {}(sp)",
                                 REGISTER_NAMES[stored_reg], offset
                             )
@@ -331,7 +328,7 @@ impl AssemblyBuildable for FunctionData {
                         } else {
                             let tmp_reg = my_agi.allocate_register(value);
                             writeln!(
-                                my_agi.output_file,
+                                output_file,
                                 "  li\t{}, {}\n  sw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
                                 offset,
@@ -365,7 +362,7 @@ impl AssemblyBuildable for FunctionData {
                             );
                         if offset <= 2047 {
                             writeln!(
-                                my_agi.output_file,
+                                output_file,
                                 "  lw\t{}, {}(sp)",
                                 REGISTER_NAMES[loaded_reg], offset
                             )
@@ -373,7 +370,7 @@ impl AssemblyBuildable for FunctionData {
                         } else {
                             let tmp_reg = my_agi.allocate_register(value);
                             writeln!(
-                                my_agi.output_file,
+                                output_file,
                                 "  li\t{}, {}\n  lw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
                                 offset,
@@ -401,11 +398,10 @@ impl AssemblyBuildable for FunctionData {
 
         // Function epilogue: change the stack pointer.
         if local_var_size <= 2047 {
-            writeln!(my_agi.output_file, "  addi\tsp, sp, {}", local_var_size)
-                .expect("Write error. ");
+            writeln!(output_file, "  addi\tsp, sp, {}", local_var_size).expect("Write error. ");
         } else {
             writeln!(
-                my_agi.output_file,
+                output_file,
                 "  li\tt0, {}\n  add\tsp, sp, t0",
                 local_var_size
             )
@@ -413,7 +409,7 @@ impl AssemblyBuildable for FunctionData {
         }
 
         // Return
-        writeln!(my_agi.output_file, "  ret").expect("Write error. ");
+        writeln!(output_file, "  ret").expect("Write error. ");
         Ok(())
     }
 }
