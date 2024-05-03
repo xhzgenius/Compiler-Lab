@@ -1,6 +1,6 @@
 //! Convert a single Koopa IR component into assembly code.
 
-use std::io::Write;
+use std::{io::Write, collections::HashMap};
 
 use super::{MyAssemblyGeneratorInfo, REGISTER_NAMES};
 use koopa::ir::{FunctionData, Program, Value};
@@ -202,13 +202,11 @@ impl AssemblyBuildable for FunctionData {
         writeln!(my_agi.output_file, "  .global {}", &self.name()[1..]).expect("Write error. ");
         writeln!(my_agi.output_file, "{}:", &self.name()[1..]).expect("Write error. ");
 
-        // Save callee-saved registers.
-        // (Currently no callee-saved registers need to be saved. )
-
         // Clear register usages when entering the function.
         my_agi.curr_time = 0;
         my_agi.register_used_time = [0; 32];
         my_agi.register_user = [None; 32];
+        my_agi.local_var_location_in_stack = HashMap::new();
 
         // In my compiler, every defined local variable (like "@y = alloc i32") has its place in memory.
         // Temporary values are stored in registers.
@@ -247,6 +245,9 @@ impl AssemblyBuildable for FunctionData {
             .expect("Write error. ");
         }
 
+        // Save callee-saved registers.
+        // (Currently no callee-saved registers need to be saved. )
+
         for (&_block, node) in self.layout().bbs() {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
@@ -280,7 +281,6 @@ impl AssemblyBuildable for FunctionData {
                             }
                             None => {}
                         }
-                        writeln!(my_agi.output_file, "  ret").expect("Write error. ");
                     }
 
                     // Binary operation
@@ -341,6 +341,7 @@ impl AssemblyBuildable for FunctionData {
                             .expect("Write error. ");
                             my_agi.free_register(tmp_reg);
                         }
+                        my_agi.free_register(stored_reg);
                     }
 
                     // Load operation
@@ -351,7 +352,7 @@ impl AssemblyBuildable for FunctionData {
                             .value(load.src())
                             .name()
                             .clone()
-                            .expect("Store target has no name. Should not happen. ");
+                            .expect("Load source has no name. Should not happen. ");
                         let offset = *my_agi
                             .local_var_location_in_stack
                             .get(&local_var_name)
@@ -394,6 +395,25 @@ impl AssemblyBuildable for FunctionData {
                 }
             }
         }
+
+        // Restore callee-saved registers.
+        // (Currently no callee-saved registers need to be restored. )
+
+        // Function epilogue: change the stack pointer.
+        if local_var_size <= 2047 {
+            writeln!(my_agi.output_file, "  addi\tsp, sp, {}", local_var_size)
+                .expect("Write error. ");
+        } else {
+            writeln!(
+                my_agi.output_file,
+                "  li\tt0, {}\n  add\tsp, sp, t0",
+                local_var_size
+            )
+            .expect("Write error. ");
+        }
+
+        // Return
+        writeln!(my_agi.output_file, "  ret").expect("Write error. ");
         Ok(())
     }
 }
