@@ -1,16 +1,63 @@
 //! Build a single component into Koopa IR.
 
 use crate::ast_def::expressions::*;
-use koopa::ir::{builder_traits::*, Program};
+use koopa::ir::{builder_traits::*, Program, Value};
 
-use super::{IRBuildResult, IRBuildable, MyIRGeneratorInfo, SymbolTableEntry, create_new_value, insert_instructions};
+use super::{MyIRGeneratorInfo, SymbolTableEntry, create_new_value, insert_instructions};
 
-impl IRBuildable for Exp {
+/// IR expression building result. If the expression is a constant expression, returns the i32 result.
+/// Otherwise, returns the Koopa IR Value.
+pub enum IRExpBuildResult {
+    Const(i32),
+    Value(Value),
+}
+pub trait IRExpBuildable {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String>;
+}
+
+impl IRExpBuildable for ConstInitVal {
+    fn build(
+        &self,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRExpBuildResult, String> {
+        let ConstInitVal::ConstExp(c) = self;
+        c.build(program, my_ir_generator_info)
+    }
+}
+
+impl IRExpBuildable for ConstExp {
+    fn build(
+        &self,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRExpBuildResult, String> {
+        let ConstExp::Exp(exp) = self;
+        exp.build(program, my_ir_generator_info)
+    }
+}
+
+impl IRExpBuildable for InitVal {
+    fn build(
+        &self,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRExpBuildResult, String> {
+        let InitVal::Exp(exp) = self;
+        exp.build(program, my_ir_generator_info)
+    }
+}
+
+impl IRExpBuildable for Exp {
+    fn build(
+        &self,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             Exp::LOrExp(lor_exp) => lor_exp.build(program, my_ir_generator_info),
         }
@@ -18,15 +65,15 @@ impl IRBuildable for Exp {
 }
 
 fn build_binary_from_build_results(
-    result1: IRBuildResult,
-    result2: IRBuildResult,
+    result1: IRExpBuildResult,
+    result2: IRExpBuildResult,
     program: &mut Program,
     my_ir_generator_info: &mut MyIRGeneratorInfo,
     binary_op: koopa::ir::BinaryOp,
-) -> Result<IRBuildResult, String> {
+) -> Result<IRExpBuildResult, String> {
     // If both expressions are constant expressions, then the result should be a constant expression.
-    if let (IRBuildResult::Const(int1), IRBuildResult::Const(int2)) = (&result1, &result2) {
-        Ok(IRBuildResult::Const(match binary_op {
+    if let (IRExpBuildResult::Const(int1), IRExpBuildResult::Const(int2)) = (&result1, &result2) {
+        Ok(IRExpBuildResult::Const(match binary_op {
             koopa::ir::BinaryOp::NotEq => (int1 != int2) as i32,
             koopa::ir::BinaryOp::Eq => (int1 == int2) as i32,
             koopa::ir::BinaryOp::Gt => (int1 > int2) as i32,
@@ -47,42 +94,42 @@ fn build_binary_from_build_results(
         }))
     } else {
         let value1 = match result1 {
-            IRBuildResult::Const(int) => {
+            IRExpBuildResult::Const(int) => {
                 create_new_value(program, my_ir_generator_info).integer(int)
             }
-            IRBuildResult::Value(value) => value,
+            IRExpBuildResult::Value(value) => value,
         };
         let value2 = match result2 {
-            IRBuildResult::Const(int) => {
+            IRExpBuildResult::Const(int) => {
                 create_new_value(program, my_ir_generator_info).integer(int)
             }
-            IRBuildResult::Value(value) => value,
+            IRExpBuildResult::Value(value) => value,
         };
         let new_value =
             create_new_value(program, my_ir_generator_info).binary(binary_op, value1, value2);
         insert_instructions(program, my_ir_generator_info, [new_value]);
-        Ok(IRBuildResult::Value(new_value))
+        Ok(IRExpBuildResult::Value(new_value))
     }
 }
 
-impl IRBuildable for LOrExp {
+impl IRExpBuildable for LOrExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             LOrExp::LAndExp(exp) => exp.build(program, my_ir_generator_info),
             LOrExp::BinaryLOrExp(exp1, exp2) => {
                 let result1 = build_binary_from_build_results(
                     exp1.build(program, my_ir_generator_info)?,
-                    IRBuildResult::Const(0),
+                    IRExpBuildResult::Const(0),
                     program,
                     my_ir_generator_info,
                     koopa::ir::BinaryOp::NotEq,
                 )?;
                 let result2 = build_binary_from_build_results(
-                    IRBuildResult::Const(0),
+                    IRExpBuildResult::Const(0),
                     exp2.build(program, my_ir_generator_info)?,
                     program,
                     my_ir_generator_info,
@@ -100,24 +147,24 @@ impl IRBuildable for LOrExp {
     }
 }
 
-impl IRBuildable for LAndExp {
+impl IRExpBuildable for LAndExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             LAndExp::EqExp(exp) => exp.build(program, my_ir_generator_info),
             LAndExp::BinaryLAndExp(exp1, exp2) => {
                 let result1 = build_binary_from_build_results(
                     exp1.build(program, my_ir_generator_info)?,
-                    IRBuildResult::Const(0),
+                    IRExpBuildResult::Const(0),
                     program,
                     my_ir_generator_info,
                     koopa::ir::BinaryOp::NotEq,
                 )?;
                 let result2 = build_binary_from_build_results(
-                    IRBuildResult::Const(0),
+                    IRExpBuildResult::Const(0),
                     exp2.build(program, my_ir_generator_info)?,
                     program,
                     my_ir_generator_info,
@@ -135,12 +182,12 @@ impl IRBuildable for LAndExp {
     }
 }
 
-impl IRBuildable for EqExp {
+impl IRExpBuildable for EqExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             EqExp::RelExp(exp) => exp.build(program, my_ir_generator_info),
             EqExp::BinaryEqExp(exp1, exp2) => build_binary_from_build_results(
@@ -161,12 +208,12 @@ impl IRBuildable for EqExp {
     }
 }
 
-impl IRBuildable for RelExp {
+impl IRExpBuildable for RelExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             RelExp::AddExp(exp) => exp.build(program, my_ir_generator_info),
             RelExp::BinaryLtExp(exp1, exp2) => build_binary_from_build_results(
@@ -201,12 +248,12 @@ impl IRBuildable for RelExp {
     }
 }
 
-impl IRBuildable for AddExp {
+impl IRExpBuildable for AddExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             AddExp::MulExp(exp) => exp.build(program, my_ir_generator_info),
             AddExp::BinaryAddExp(exp1, exp2) => build_binary_from_build_results(
@@ -227,12 +274,12 @@ impl IRBuildable for AddExp {
     }
 }
 
-impl IRBuildable for MulExp {
+impl IRExpBuildable for MulExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             MulExp::UnaryExp(exp) => exp.build(program, my_ir_generator_info),
             MulExp::BinaryMulExp(exp1, exp2) => build_binary_from_build_results(
@@ -260,24 +307,24 @@ impl IRBuildable for MulExp {
     }
 }
 
-impl IRBuildable for UnaryExp {
+impl IRExpBuildable for UnaryExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             UnaryExp::PrimaryExp(exp) => exp.build(program, my_ir_generator_info),
             UnaryExp::PlusUnaryExp(exp) => exp.build(program, my_ir_generator_info),
             UnaryExp::MinusUnaryExp(exp) => build_binary_from_build_results(
-                IRBuildResult::Const(0),
+                IRExpBuildResult::Const(0),
                 exp.build(program, my_ir_generator_info)?,
                 program,
                 my_ir_generator_info,
                 koopa::ir::BinaryOp::Sub,
             ),
             UnaryExp::NotUnaryExp(exp) => build_binary_from_build_results(
-                IRBuildResult::Const(0),
+                IRExpBuildResult::Const(0),
                 exp.build(program, my_ir_generator_info)?,
                 program,
                 my_ir_generator_info,
@@ -287,23 +334,23 @@ impl IRBuildable for UnaryExp {
     }
 }
 
-impl IRBuildable for PrimaryExp {
+impl IRExpBuildable for PrimaryExp {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             PrimaryExp::BracedExp(exp) => exp.build(program, my_ir_generator_info),
             PrimaryExp::LVal(lval) => {
                 let result = lval.build(program, my_ir_generator_info)?;
                 match result {
-                    IRBuildResult::Const(_int) => Ok(result),
-                    IRBuildResult::Value(ptr) => {
+                    IRExpBuildResult::Const(_int) => Ok(result),
+                    IRExpBuildResult::Value(ptr) => {
                         // If the PrimaryExp is a variable, then load it. 
                         let load_inst = create_new_value(program, my_ir_generator_info).load(ptr);
                         insert_instructions(program, my_ir_generator_info, [load_inst]);
-                        Ok(IRBuildResult::Value(load_inst))
+                        Ok(IRExpBuildResult::Value(load_inst))
                     }
                 }
             }
@@ -312,17 +359,17 @@ impl IRBuildable for PrimaryExp {
     }
 }
 
-impl IRBuildable for LVal {
+impl IRExpBuildable for LVal {
     fn build(
         &self,
         _program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
             LVal::IDENT(ident) => match my_ir_generator_info.symbol_tables.get(&ident.content) {
-                Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRBuildResult::Value(*ptr)),
+                Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRExpBuildResult::Value(*ptr)),
                 Some(SymbolTableEntry::Constant(_lval_type, values)) => {
-                    Ok(IRBuildResult::Const(values[0]))
+                    Ok(IRExpBuildResult::Const(values[0]))
                 }
                 None => Err(format!("Undeclared symbol: {}", ident.content)),
             },
@@ -330,14 +377,14 @@ impl IRBuildable for LVal {
     }
 }
 
-impl IRBuildable for Number {
+impl IRExpBuildable for Number {
     fn build(
         &self,
         _program: &mut Program,
         _my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
+    ) -> Result<IRExpBuildResult, String> {
         match self {
-            Number::INTCONST(int) => Ok(IRBuildResult::Const(*int)),
+            Number::INTCONST(int) => Ok(IRExpBuildResult::Const(*int)),
         }
     }
 }

@@ -17,12 +17,9 @@
 //!
 //! ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
 //! ConstDef      ::= IDENT "=" ConstInitVal;
-//! ConstInitVal  ::= ConstExp;
-//! ConstExp      ::= Exp;
 //!
 //! VarDecl       ::= BType VarDef {"," VarDef} ";";
 //! VarDef        ::= IDENT | IDENT "=" InitVal;
-//! InitVal       ::= Exp;
 //!
 //! ======================================================
 //! Statements
@@ -35,6 +32,10 @@
 //! ======================================================
 //! Expressions
 //! ======================================================
+//! ConstInitVal  ::= ConstExp;
+//! ConstExp      ::= Exp;
+//! InitVal       ::= Exp;
+//! 
 //! Exp         ::= LOrExp;
 //!
 //! LOrExp      ::= LAndExp | LOrExp "||" LAndExp;

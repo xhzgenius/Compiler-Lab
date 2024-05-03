@@ -4,6 +4,21 @@
 use super::symbols::*;
 
 #[derive(Debug)]
+pub enum ConstInitVal {
+    ConstExp(ConstExp),
+}
+
+#[derive(Debug)]
+pub enum ConstExp {
+    Exp(Exp),
+}
+
+#[derive(Debug)]
+pub enum InitVal {
+    Exp(Exp),
+}
+
+#[derive(Debug)]
 pub enum Exp {
     LOrExp(LOrExp),
 }

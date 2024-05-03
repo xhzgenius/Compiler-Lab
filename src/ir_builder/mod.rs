@@ -54,7 +54,7 @@ impl SymbolTableStack {
         self.symbol_tables.pop();
     }
     fn curr_depth(&self) -> usize {
-        self.symbol_tables.len()-1
+        self.symbol_tables.len() - 1
     }
 }
 
@@ -72,11 +72,9 @@ impl std::fmt::Debug for SymbolTableEntry {
     }
 }
 
-/// IR building result. If the expression is a constant expression, returns the i32 result.
-/// Otherwise, returns the Koopa IR Value.
 pub enum IRBuildResult {
-    Const(i32),
-    Value(Value),
+    OK,
+    EARLYSTOPPING,
 }
 
 pub trait IRBuildable {

@@ -2,7 +2,8 @@ int main() {
   int a = 1;
   {
     int a = -123;
-    // return 0+1;
+    -1;
+    return 0+1;
   }
   {
     a = 2;

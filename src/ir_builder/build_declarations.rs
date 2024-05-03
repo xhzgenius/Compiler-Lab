@@ -4,6 +4,7 @@ use crate::ast_def::declarations::*;
 use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
 
 use super::{
+    build_expressions::{IRExpBuildResult, IRExpBuildable},
     create_new_value, insert_instructions, IRBuildResult, IRBuildable, MyIRGeneratorInfo,
     SymbolTableEntry,
 };
@@ -42,12 +43,12 @@ impl IRBuildable for Block {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         let Block::Default(stmts) = self;
-        let mut block_result = IRBuildResult::Const(114514);
+        let mut block_result = IRBuildResult::OK;
         my_ir_generator_info.symbol_tables.add_new_table();
         for stmt in stmts {
             let result = stmt.build(program, my_ir_generator_info)?;
             // Ignore everything after the return statement.
-            if let IRBuildResult::Const(-1) = result {
+            if let IRBuildResult::EARLYSTOPPING = result {
                 block_result = result;
                 break;
             }
@@ -109,13 +110,13 @@ impl IRBuildable for ConstDecl {
             let result = rhs.build(program, my_ir_generator_info)?;
             // Add an entry in the symbol table.
             match result {
-                IRBuildResult::Const(int) => {
+                IRExpBuildResult::Const(int) => {
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Constant(const_type.clone(), vec![int]),
                     );
                 }
-                IRBuildResult::Value(_) => {
+                IRExpBuildResult::Value(_) => {
                     return Err(format!(
                         "Non-constant expression in constant declaration: {:?}",
                         const_def
@@ -123,29 +124,7 @@ impl IRBuildable for ConstDecl {
                 }
             }
         }
-        Ok(IRBuildResult::Const(114514))
-    }
-}
-
-impl IRBuildable for ConstInitVal {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
-        let ConstInitVal::ConstExp(c) = self;
-        c.build(program, my_ir_generator_info)
-    }
-}
-
-impl IRBuildable for ConstExp {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
-        let ConstExp::Exp(exp) = self;
-        exp.build(program, my_ir_generator_info)
+        Ok(IRBuildResult::OK)
     }
 }
 
@@ -163,10 +142,10 @@ impl IRBuildable for VarDecl {
                     // Build RHS value.
                     let result = rhs.build(program, my_ir_generator_info)?;
                     let rhs_value = match result {
-                        IRBuildResult::Const(int) => {
+                        IRExpBuildResult::Const(int) => {
                             create_new_value(program, my_ir_generator_info).integer(int)
                         }
-                        IRBuildResult::Value(value) => value,
+                        IRExpBuildResult::Value(value) => value,
                     };
                     // Allocate the new variable.
                     let var_ptr = create_new_value(program, my_ir_generator_info)
@@ -216,17 +195,7 @@ impl IRBuildable for VarDecl {
                 }
             }
         }
-        Ok(IRBuildResult::Const(114514))
+        Ok(IRBuildResult::OK)
     }
 }
 
-impl IRBuildable for InitVal {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRBuildResult, String> {
-        let InitVal::Exp(exp) = self;
-        exp.build(program, my_ir_generator_info)
-    }
-}
