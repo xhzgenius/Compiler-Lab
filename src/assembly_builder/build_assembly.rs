@@ -236,12 +236,12 @@ impl AssemblyBuildable for FunctionData {
 
         // Function prologue: change the stack pointer.
         if local_var_size <= 2048 {
-            writeln!(my_agi.output_file, "  addi sp, sp, -{}", local_var_size)
+            writeln!(my_agi.output_file, "  addi\tsp, sp, -{}", local_var_size)
                 .expect("Write error. ");
         } else {
             writeln!(
                 my_agi.output_file,
-                "  li t0, -{}\n  add sp, sp, t0",
+                "  li\tt0, -{}\n  add\tsp, sp, t0",
                 local_var_size
             )
             .expect("Write error. ");
@@ -263,14 +263,14 @@ impl AssemblyBuildable for FunctionData {
                                 match return_value_data.kind() {
                                     // Integer return value
                                     koopa::ir::ValueKind::Integer(int) => {
-                                        writeln!(my_agi.output_file, "  li a0, {}", int.value())
+                                        writeln!(my_agi.output_file, "  li\ta0, {}", int.value())
                                             .expect("Write error. ");
                                     }
                                     // Other return values (result of binary expressions or left values)
                                     _ => {
                                         writeln!(
                                             my_agi.output_file,
-                                            "  mv a0, {}",
+                                            "  mv\ta0, {}",
                                             REGISTER_NAMES
                                                 [my_agi.find_using_register(return_value)]
                                         )
@@ -311,22 +311,36 @@ impl AssemblyBuildable for FunctionData {
                             .name()
                             .clone()
                             .expect("Store target has no name. Should not happen. ");
-                        writeln!(
-                            my_agi.output_file,
-                            "  sw {}, {}(sp)",
-                            REGISTER_NAMES[stored_reg],
-                            my_agi
-                                .local_var_location_in_stack
-                                .get(&local_var_name)
-                                .expect(
-                                    format!(
-                                        "Can't find {} in stack. Should not happen. ",
-                                        &local_var_name
-                                    )
-                                    .as_str()
+                        let offset = *my_agi
+                            .local_var_location_in_stack
+                            .get(&local_var_name)
+                            .expect(
+                                format!(
+                                    "Can't find {} in stack. Should not happen. ",
+                                    &local_var_name
                                 )
-                        )
-                        .expect("Write error. ");
+                                .as_str(),
+                            );
+                        if offset <= 2047 {
+                            writeln!(
+                                my_agi.output_file,
+                                "  sw\t{}, {}(sp)",
+                                REGISTER_NAMES[stored_reg], offset
+                            )
+                            .expect("Write error. ");
+                        } else {
+                            let tmp_reg = my_agi.allocate_register(value);
+                            writeln!(
+                                my_agi.output_file,
+                                "  li\t{}, {}\n  sw\t{}, 0({})",
+                                REGISTER_NAMES[tmp_reg],
+                                offset,
+                                REGISTER_NAMES[stored_reg],
+                                REGISTER_NAMES[tmp_reg]
+                            )
+                            .expect("Write error. ");
+                            my_agi.free_register(tmp_reg);
+                        }
                     }
 
                     // Load operation
@@ -338,22 +352,36 @@ impl AssemblyBuildable for FunctionData {
                             .name()
                             .clone()
                             .expect("Store target has no name. Should not happen. ");
-                        writeln!(
-                            my_agi.output_file,
-                            "  lw {}, {}(sp)",
-                            REGISTER_NAMES[loaded_reg],
-                            my_agi
-                                .local_var_location_in_stack
-                                .get(&local_var_name)
-                                .expect(
-                                    format!(
-                                        "Can't find {} in stack. Should not happen. ",
-                                        &local_var_name
-                                    )
-                                    .as_str()
+                        let offset = *my_agi
+                            .local_var_location_in_stack
+                            .get(&local_var_name)
+                            .expect(
+                                format!(
+                                    "Can't find {} in stack. Should not happen. ",
+                                    &local_var_name
                                 )
-                        )
-                        .expect("Write error. ");
+                                .as_str(),
+                            );
+                        if offset <= 2047 {
+                            writeln!(
+                                my_agi.output_file,
+                                "  lw\t{}, {}(sp)",
+                                REGISTER_NAMES[loaded_reg], offset
+                            )
+                            .expect("Write error. ");
+                        } else {
+                            let tmp_reg = my_agi.allocate_register(value);
+                            writeln!(
+                                my_agi.output_file,
+                                "  li\t{}, {}\n  lw\t{}, 0({})",
+                                REGISTER_NAMES[tmp_reg],
+                                offset,
+                                REGISTER_NAMES[loaded_reg],
+                                REGISTER_NAMES[tmp_reg]
+                            )
+                            .expect("Write error. ");
+                            my_agi.free_register(tmp_reg);
+                        }
                     }
 
                     // Other instructions (TODO: Not implemented)

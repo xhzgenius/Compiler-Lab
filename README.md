@@ -182,7 +182,7 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
 
 把前端生成IR的代码也拆成了三个部分。
 
-维护一个HashMap作为符号表。符号表里记录了该符号的类型和对应的Koopa IR Value。
+维护一个HashMap作为符号表。符号表里记录了该符号的类型和对应的Koopa IR `Value` 。
 
 ###### 前端：计算常量表达式（包括非常量表达式中的常量部分）
 
@@ -199,6 +199,8 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
 然后在遍历指令生成汇编代码的时候，对于Koopa IR中的每句 `load` 和 `store` 指令，生成RISC-V中对应的 `lw` 和 `sw` 指令就行了。（ `load` 和 `store` 指令所操作的变量名可以用 `ValueData` 中的 `name()` 方法获得。）
 
 ##### 注意
+
+###### 前端：IR生成
 
 `dfg.new_value().load()` 函数返回的是一个含有值的 `Value` ，而 `dfg.new_value().alloc()` 和 `dfg.new_value().store()` 函数返回的是一个指针的 `Value` 。
 
