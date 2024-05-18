@@ -159,7 +159,7 @@ impl IRBuildable for VarDecl {
                         .set_value_name(
                             var_ptr,
                             Some(format!(
-                                "@{}_{}",
+                                "@{}-{}",
                                 ident.content,
                                 my_ir_generator_info.symbol_tables.curr_depth()
                             )),
@@ -181,7 +181,7 @@ impl IRBuildable for VarDecl {
                         .set_value_name(
                             var_ptr,
                             Some(format!(
-                                "@{}_{}",
+                                "@{}-{}",
                                 ident.content,
                                 my_ir_generator_info.symbol_tables.curr_depth()
                             )),

@@ -9,5 +9,5 @@ pub enum Stmt {
     AssignStmt(LVal, Exp),
     Exp(Option<Exp>),
     Block(Block),
-    ReturnStmt(Exp),
+    ReturnStmt(Option<Exp>),
 }

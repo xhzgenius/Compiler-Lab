@@ -43,6 +43,9 @@ impl SymbolTableStack {
         }
         None
     }
+    // fn get_nearest(&self, name: &String) -> Option<&SymbolTableEntry> {
+
+    // }
     fn insert(&mut self, name: String, entry: SymbolTableEntry) {
         let table = self.symbol_tables.last_mut().unwrap();
         table.insert(name, entry);

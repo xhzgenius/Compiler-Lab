@@ -42,15 +42,19 @@ impl IRBuildable for Stmt {
                 Ok(IRBuildResult::OK)
             }
             Stmt::ReturnStmt(returned_exp) => {
-                let result = returned_exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
-                let return_value = match result {
-                    IRExpBuildResult::Const(int) => {
-                        create_new_value(program, my_ir_generator_info).integer(int)
-                    }
-                    IRExpBuildResult::Value(value) => value,
+                let return_value = match returned_exp {
+                    Some(exp) => Some({
+                        let result = exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
+                        match result {
+                            IRExpBuildResult::Const(int) => {
+                                create_new_value(program, my_ir_generator_info).integer(int)
+                            }
+                            IRExpBuildResult::Value(value) => value,
+                        }
+                    }),
+                    None => None,
                 };
-                let return_stmt =
-                    create_new_value(program, my_ir_generator_info).ret(Some(return_value));
+                let return_stmt = create_new_value(program, my_ir_generator_info).ret(return_value);
                 insert_instructions(program, my_ir_generator_info, [return_stmt]);
                 Ok(IRBuildResult::EARLYSTOPPING)
             }
