@@ -4,6 +4,5 @@ fun @main(): i32 {
   store 1, @a-1
   %0 = load @a-1
   %1 = add 1, %0
-  @a-2 = alloc i32
   ret 114
 }

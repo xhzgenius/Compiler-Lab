@@ -6,8 +6,25 @@ use super::expressions::*;
 
 #[derive(Debug)]
 pub enum Stmt {
+    UnmatchedStmt(UnmatchedStmt), 
+    MatchedStmt(MatchedStmt), 
+}
+
+#[derive(Debug)]
+pub struct UnmatchedStmt {
+    pub default: BasicStmt,
+}
+
+#[derive(Debug)]
+pub struct MatchedStmt {
+    pub default: BasicStmt,
+}
+
+#[derive(Debug)]
+pub enum BasicStmt {
     AssignStmt(LVal, Exp),
     Exp(Option<Exp>),
     Block(Block),
+    IfStmt(Exp, Box<BasicStmt>, Box<Option<BasicStmt>>),
     ReturnStmt(Option<Exp>),
 }

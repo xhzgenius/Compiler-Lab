@@ -66,8 +66,7 @@ VarDecl: VarDecl = <b: BType> <v: VarDef> <vs: ("," <VarDef>)*> ";" => {
 };
 
 VarDef: VarDef = {
-  <i: IDENT> => VarDef::WithoutInitVal(i), 
-  <i: IDENT> "=" <val: InitVal> => VarDef::WithInitVal(i, val), 
+  <i: IDENT> <val: ("=" <InitVal>)?> => VarDef::Default(i, val), 
 }
 
 InitVal: InitVal = <e: Exp> => InitVal::Exp(e);
@@ -76,11 +75,25 @@ InitVal: InitVal = <e: Exp> => InitVal::Exp(e);
 // Statements
 // ======================================================
 
-Stmt: Stmt =  {
-  <l: LVal> "=" <e: Exp> ";" => Stmt::AssignStmt(l, e), 
-  <exp: (Exp)?> ";" => Stmt::Exp(exp), 
-  <b: Block> => Stmt::Block(b), 
-  "return" <exp: (Exp)?> ";" => Stmt::ReturnStmt(exp), 
+Stmt: Stmt = {
+  <us: UnmatchedStmt> => Stmt::UnmatchedStmt(us), 
+  <ms: MatchedStmt> => Stmt::MatchedStmt(ms), 
+}
+
+UnmatchedStmt: UnmatchedStmt = {
+  "if" "(" <e: Exp> ")" <ms: MatchedStmt>
+    => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(None))}, 
+  "if" "(" <e: Exp> ")" <ms: MatchedStmt> "else" <s: UnmatchedStmt> 
+    => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(Some(s.default)))}, 
+}
+
+MatchedStmt: MatchedStmt =  {
+  <l: LVal> "=" <e: Exp> ";" => MatchedStmt{default: BasicStmt::AssignStmt(l, e)}, 
+  <exp: (Exp)?> ";" => MatchedStmt{default: BasicStmt::Exp(exp)}, 
+  <b: Block> => MatchedStmt{default: BasicStmt::Block(b)}, 
+  "if" "(" <exp: Exp> ")" <s1: MatchedStmt> "else" <s2: MatchedStmt> 
+    => MatchedStmt{default: BasicStmt::IfStmt(exp, Box::new(s1.default), Box::new(Some(s2.default)))}, 
+  "return" <exp: (Exp)?> ";" => MatchedStmt{default: BasicStmt::ReturnStmt(exp)}, 
 }
 
 // ======================================================

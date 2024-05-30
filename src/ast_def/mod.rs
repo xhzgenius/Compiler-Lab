@@ -24,9 +24,15 @@
 //! ======================================================
 //! Statements
 //! ======================================================
-//! Stmt ::= LVal "=" Exp ";"
+//! Stmt ::= UnmatchedStmt
+//!        | MatchedStmt
+//! 
+//! UnmatchedStmt ::= "if" "(" Exp ")" MatchedStmt ["else" UnmatchedStmt]
+//! 
+//! MatchedStmt ::= LVal "=" Exp ";"
 //!        | [Exp] ";"
 //!        | Block
+//!        | "if" "(" Exp ")" MatchedStmt "else" MatchedStmt
 //!        | "return" [Exp] ";";
 //!
 //! ======================================================

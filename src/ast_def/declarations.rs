@@ -44,6 +44,5 @@ pub enum VarDecl {
 
 #[derive(Debug)]
 pub enum VarDef {
-    WithoutInitVal(IDENT),
-    WithInitVal(IDENT, InitVal),
+    Default(IDENT, Option<InitVal>),
 }

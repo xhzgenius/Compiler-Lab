@@ -137,65 +137,41 @@ impl IRBuildable for VarDecl {
         let VarDecl::Default(btype, var_defs) = self;
         let var_type = &btype.content;
         for var_def in var_defs {
-            match var_def {
-                VarDef::WithInitVal(ident, rhs) => {
-                    // Build RHS value.
-                    let result = rhs.build(program, my_ir_generator_info)?;
-                    let rhs_value = match result {
-                        IRExpBuildResult::Const(int) => {
-                            create_new_value(program, my_ir_generator_info).integer(int)
-                        }
-                        IRExpBuildResult::Value(value) => value,
-                    };
-                    // Allocate the new variable.
-                    let var_ptr = create_new_value(program, my_ir_generator_info)
-                        .alloc(Type::get(var_type.clone()));
-                    // Assign the RHS value into the new variable.
-                    let store_inst =
-                        create_new_value(program, my_ir_generator_info).store(rhs_value, var_ptr);
-                    program
-                        .func_mut(my_ir_generator_info.curr_func.unwrap())
-                        .dfg_mut()
-                        .set_value_name(
-                            var_ptr,
-                            Some(format!(
-                                "@{}-{}",
-                                ident.content,
-                                my_ir_generator_info.symbol_tables.curr_depth()
-                            )),
-                        );
-                    insert_instructions(program, my_ir_generator_info, [var_ptr, store_inst]);
-                    // Add an entry in the symbol table.
-                    my_ir_generator_info.symbol_tables.insert(
-                        ident.content.clone(),
-                        SymbolTableEntry::Variable(var_type.clone(), var_ptr),
-                    );
-                }
-                VarDef::WithoutInitVal(ident) => {
-                    // Allocate the new variable.
-                    let var_ptr = create_new_value(program, my_ir_generator_info)
-                        .alloc(Type::get(var_type.clone()));
-                    program
-                        .func_mut(my_ir_generator_info.curr_func.unwrap())
-                        .dfg_mut()
-                        .set_value_name(
-                            var_ptr,
-                            Some(format!(
-                                "@{}-{}",
-                                ident.content,
-                                my_ir_generator_info.symbol_tables.curr_depth()
-                            )),
-                        );
-                    insert_instructions(program, my_ir_generator_info, [var_ptr]);
-                    // Add an entry in the symbol table.
-                    my_ir_generator_info.symbol_tables.insert(
-                        ident.content.clone(),
-                        SymbolTableEntry::Variable(var_type.clone(), var_ptr),
-                    );
-                }
+            let VarDef::Default(ident, possible_rhs) = var_def;
+            // Allocate the new variable and get its Koopa IR Value.
+            let var_ptr =
+                create_new_value(program, my_ir_generator_info).alloc(Type::get(var_type.clone()));
+            program
+                .func_mut(my_ir_generator_info.curr_func.unwrap())
+                .dfg_mut()
+                .set_value_name(
+                    var_ptr,
+                    Some(format!(
+                        "@{}-{}",
+                        ident.content,
+                        my_ir_generator_info.symbol_tables.curr_depth()
+                    )),
+                );
+            if let Some(rhs) = possible_rhs {
+                // Build RHS value (if exists).
+                let result = rhs.build(program, my_ir_generator_info)?;
+                let rhs_value = match result {
+                    IRExpBuildResult::Const(int) => {
+                        create_new_value(program, my_ir_generator_info).integer(int)
+                    }
+                    IRExpBuildResult::Value(value) => value,
+                };
+                // Assign the RHS value into the new variable.
+                let store_inst =
+                    create_new_value(program, my_ir_generator_info).store(rhs_value, var_ptr);
+                insert_instructions(program, my_ir_generator_info, [var_ptr, store_inst]);
             }
+            // Add an entry in the symbol table.
+            my_ir_generator_info.symbol_tables.insert(
+                ident.content.clone(),
+                SymbolTableEntry::Variable(var_type.clone(), var_ptr),
+            );
         }
         Ok(IRBuildResult::OK)
     }
 }
-

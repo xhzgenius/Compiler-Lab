@@ -258,4 +258,43 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv5 /root/compiler
 ```
 
+---
+
+#### Lv.6 if 语句
+
+##### 写自己的代码
+
+加上 if 语法。这玩意有二义性，把它改成无二义性文法的改法很恶心，但也只能这么做。改法如下：
+
+```
+//! Stmt ::= UnmatchedStmt
+//!        | MatchedStmt
+//! 
+//! UnmatchedStmt ::= "if" "(" Exp ")" MatchedStmt ["else" UnmatchedStmt]
+//! 
+//! MatchedStmt ::= LVal "=" Exp ";"
+//!        | [Exp] ";"
+//!        | Block
+//!        | "if" "(" Exp ")" MatchedStmt "else" MatchedStmt
+//!        | "return" [Exp] ";";
+```
+
+然而我并不想把实际上相同的 `build()` 方法写两遍（事实上也应尽量不把重复的代码写两遍）
+
+##### 注意
+
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv6 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv6 /root/compiler
+```
+
 —END—
