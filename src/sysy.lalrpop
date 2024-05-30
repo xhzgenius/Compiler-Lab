@@ -83,8 +83,10 @@ Stmt: Stmt = {
 UnmatchedStmt: UnmatchedStmt = {
   "if" "(" <e: Exp> ")" <ms: MatchedStmt>
     => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(None))}, 
-  "if" "(" <e: Exp> ")" <ms: MatchedStmt> "else" <s: UnmatchedStmt> 
-    => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(Some(s.default)))}, 
+  "if" "(" <e: Exp> ")" <ums: UnmatchedStmt>
+    => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ums.default), Box::new(None))}, 
+  "if" "(" <e: Exp> ")" <ms: MatchedStmt> "else" <ums: UnmatchedStmt> 
+    => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(Some(ums.default)))}, 
 }
 
 MatchedStmt: MatchedStmt =  {

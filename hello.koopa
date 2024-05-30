@@ -8,15 +8,10 @@ fun @main(): i32 {
 %if_block_1:
   %1 = load @a_1
   %2 = add %1, 1
-  br %2, %if_block_1_0, %if_block_2
+  br %2, %if_block_1_0, %if_block_end_0
 
 %if_block_1_0:
-  store 114514, @a_1
-  jump %if_block_end_0
-
-%if_block_2:
-  store 114, @a_1
-  jump %if_block_end_0
+  ret
 
 %if_block_end_0:
   jump %if_block_end
