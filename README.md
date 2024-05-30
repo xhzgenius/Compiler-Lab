@@ -264,7 +264,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 ##### 写自己的代码
 
-加上 if 语法。这玩意有二义性，把它改成无二义性文法的改法很恶心，但也只能这么做。改法如下：
+**首先，加上 if 语法。**这玩意有二义性，把它改成无二义性文法的改法很恶心，但也只能这么做。改法如下：
 
 ```
 //! Stmt ::= UnmatchedStmt
@@ -279,9 +279,19 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 //!        | "return" [Exp] ";";
 ```
 
-然而我并不想把实际上相同的 `build()` 方法写两遍（事实上也应尽量不把重复的代码写两遍）
+然而我并不想把实际上相同的 `build()` 方法写两遍（事实上也应尽量不把重复的代码写两遍）。`UnmatchedStmt` 与 `MatchedStmt` 只有在解析语法的时候有区别，在此之后没任何区别，因此我定义 `UnmatchedStmt` 与 `MatchedStmt` 内部都是 `BasicStmt` ，在解析完语法之后，一视同仁地处理它们。
+
+**其次，如何在 Koopa IR 中实现 if else 跳转？**使用 Koopa IR 中的基本块 `BasicBlock` 即可。Koopa IR 有 branch 和 jump 的指令，跳转的目的地都是 `BasicBlock` 。在 if 语句之前有一个初始块，if 的条件为 true 时有一个基本块，if 的条件为 false 时有一个基本块，if 语句结束时也有一个基本块。因此，除去初始的基本块以外，我还要创建三个新的基本块。通过跳转即可实现 if else 的功能。
+
+在 `build` 各部分的 Koopa IR 的时候，我会指定当前所处的基本块是哪个，然后调用 `build` 方法。这样就能把各部分分别 `build` 到正确的基本块中。
+
+**最后，如何实现短路求值？**好问题。
 
 ##### 注意
+
+测试脚本不允许 Koopa IR 的变量名带有横杠，明明 Koopa IR 规范是允许的。
+
+于是我又把变量命名方法改掉了。
 
 ##### 本地测试
 

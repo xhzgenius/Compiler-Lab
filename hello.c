@@ -1,12 +1,10 @@
-int main()
-{
-  int a = 1;
-  1 + 2 + 3 + 4 + 5;
-  1 + a;
+int main() {
+  int a = 2;
+  if (a) if (a+1)
   {
-    int a;
-    return 114;
-  }
-  int a;
-  a = 114514;
+    // return;
+    a = 114514;
+  }  // 在实际写 C/C++ 程序的时候别这样, 建议 if 的分支全部带大括号
+  else a = 114;
+  return a;
 }

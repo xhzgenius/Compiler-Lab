@@ -124,3 +124,18 @@ fn insert_instructions<T>(
         .insts_mut()
         .extend(instructions);
 }
+
+/// Helper function to insert basic blocks into the current function's data flow graph.
+fn insert_basic_blocks<T>(
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+    basic_blocks: T,
+) where
+    T: IntoIterator<Item = BasicBlock>,
+{
+    program
+        .func_mut(my_ir_generator_info.curr_func.unwrap())
+        .layout_mut()
+        .bbs_mut()
+        .extend(basic_blocks);
+}
