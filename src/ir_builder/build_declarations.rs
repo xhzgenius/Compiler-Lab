@@ -152,6 +152,8 @@ impl IRBuildable for VarDecl {
                         my_ir_generator_info.symbol_tables.curr_depth()
                     )),
                 );
+            // Insert the "alloc" instruction.
+            insert_instructions(program, my_ir_generator_info, [var_ptr]);
             if let Some(rhs) = possible_rhs {
                 // Build RHS value (if exists).
                 let result = rhs.build(program, my_ir_generator_info)?;
@@ -164,7 +166,7 @@ impl IRBuildable for VarDecl {
                 // Assign the RHS value into the new variable.
                 let store_inst =
                     create_new_value(program, my_ir_generator_info).store(rhs_value, var_ptr);
-                insert_instructions(program, my_ir_generator_info, [var_ptr, store_inst]);
+                insert_instructions(program, my_ir_generator_info, [store_inst]);
             }
             // Add an entry in the symbol table.
             my_ir_generator_info.symbol_tables.insert(
