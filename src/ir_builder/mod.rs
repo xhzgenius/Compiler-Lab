@@ -17,6 +17,7 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
         symbol_tables: SymbolTableStack {
             symbol_tables: vec![HashMap::new()],
         },
+        bb_cnt: 0,
     };
     comp_unit.build(&mut program, &mut my_ir_generator_info)?;
     Ok(program)
@@ -27,6 +28,7 @@ pub struct MyIRGeneratorInfo {
     curr_block: Option<BasicBlock>,  // Current block
     curr_func: Option<Function>,     // Current function
     symbol_tables: SymbolTableStack, // Symbol table: ident-(type, Value)
+    bb_cnt: usize,                   // Number of BasicBlocks
 }
 
 #[derive(Debug)]

@@ -1,6 +1,7 @@
 int main() {
   int a = 2;
-  // int b = 0||a;
-  if (a&&514) return;
+  if (a) {
+    a = 5;
+  }
   return a;
 }

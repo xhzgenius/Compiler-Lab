@@ -245,7 +245,20 @@ impl AssemblyBuildable for FunctionData {
         // Save callee-saved registers.
         // (Currently no callee-saved registers need to be saved. )
 
-        for (&_block, node) in self.layout().bbs() {
+        for (&block, node) in self.layout().bbs() {
+            // At the beginning of the BasicBlock, declare its name.
+            let possible_bb_name = self
+                .dfg()
+                .bbs()
+                .get(&block)
+                .expect("Can't find BasicBlock. Should not happen. ")
+                .name()
+                .clone();
+            if let Some(bb_name) = possible_bb_name {
+                writeln!(output_file, "\n{}:", &bb_name[1..]).expect("Write error. ");
+            }
+
+            // Generate instructions.
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
                 match value_data.kind() {
@@ -380,6 +393,59 @@ impl AssemblyBuildable for FunctionData {
                             .expect("Write error. ");
                             my_agi.free_register(tmp_reg);
                         }
+                    }
+
+                    // Jump operation
+                    koopa::ir::ValueKind::Jump(jump) => {
+                        writeln!(
+                            output_file,
+                            "  j\t{}",
+                            &self
+                                .dfg()
+                                .bbs()
+                                .get(&jump.target())
+                                .expect("Can't find jump target BasicBlock. Should not happen. ")
+                                .name()
+                                .clone()
+                                .expect("Jump target BasicBlock has no name. Should not happen. ")
+                                [1..]
+                        )
+                        .expect("Write error. ");
+                    }
+
+                    // Branch operation
+                    koopa::ir::ValueKind::Branch(branch) => {
+                        let cond_reg_name =
+                            REGISTER_NAMES[get_reg(self, branch.cond(), &mut my_agi, output_file)?];
+                        writeln!(
+                            output_file,
+                            "  bnez\t{}, {}",
+                            cond_reg_name,
+                            &self
+                                .dfg()
+                                .bbs()
+                                .get(&branch.true_bb())
+                                .expect("Can't find branch BasicBlock 1. Should not happen. ")
+                                .name()
+                                .clone()
+                                .expect("Branch BasicBlock 1 has no name. Should not happen. ")
+                                [1..]
+                        )
+                        .expect("Write error. ");
+                        writeln!(
+                            output_file,
+                            "  j\t{}",
+                            &self
+                                .dfg()
+                                .bbs()
+                                .get(&branch.false_bb())
+                                .expect("Can't find branch BasicBlock 2. Should not happen. ")
+                                .name()
+                                .clone()
+                                .expect("Branch BasicBlock 2 has no name. Should not happen. ")
+                                [1..]
+                        )
+                        .expect("Write error. ");
                     }
 
                     // Other instructions (TODO: Not implemented)

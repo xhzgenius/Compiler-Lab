@@ -96,7 +96,8 @@ impl IRBuildable for BasicStmt {
                     .func_mut(my_ir_generator_info.curr_func.unwrap())
                     .dfg_mut()
                     .new_bb()
-                    .basic_block(Some(format!("%if_block_end")));
+                    .basic_block(Some(format!("%bb{}_if_block_end", my_ir_generator_info.bb_cnt)));
+                my_ir_generator_info.bb_cnt += 1;
                 let block_start = my_ir_generator_info
                     .curr_block
                     .expect("No current block. Should not happen! ");
@@ -106,7 +107,8 @@ impl IRBuildable for BasicStmt {
                     .func_mut(my_ir_generator_info.curr_func.unwrap())
                     .dfg_mut()
                     .new_bb()
-                    .basic_block(Some(format!("%if_block_1")));
+                    .basic_block(Some(format!("%bb{}_if_block_1", my_ir_generator_info.bb_cnt)));
+                my_ir_generator_info.bb_cnt += 1;
                 // Remember to insert basic blocks into the current function's data flow graph.
                 insert_basic_blocks(program, my_ir_generator_info, [block1]);
                 my_ir_generator_info.curr_block = Some(block1);
@@ -126,7 +128,8 @@ impl IRBuildable for BasicStmt {
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .new_bb()
-                            .basic_block(Some(format!("%if_block_2")));
+                            .basic_block(Some(format!("%bb{}_if_block_2", my_ir_generator_info.bb_cnt)));
+                        my_ir_generator_info.bb_cnt += 1;
                         // Remember to insert the basic block into the current function's data flow graph.
                         insert_basic_blocks(program, my_ir_generator_info, [block2]);
                         my_ir_generator_info.curr_block = Some(block2);

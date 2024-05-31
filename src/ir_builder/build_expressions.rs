@@ -140,12 +140,14 @@ impl IRExpBuildable for LOrExp {
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .new_bb()
-                            .basic_block(Some(format!("%LOr_if_block_1")));
+                            .basic_block(Some(format!("%bb{}_LOr_if_block_1", my_ir_generator_info.bb_cnt)));
+                        my_ir_generator_info.bb_cnt += 1;
                         let block_end = program
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .new_bb()
-                            .basic_block(Some(format!("%LOr_if_block_end")));
+                            .basic_block(Some(format!("%bb{}_LOr_if_block_end", my_ir_generator_info.bb_cnt)));
+                        my_ir_generator_info.bb_cnt += 1;
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
                         let result_ptr =
@@ -249,12 +251,14 @@ impl IRExpBuildable for LAndExp {
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .new_bb()
-                            .basic_block(Some(format!("%LAnd_if_block_1")));
+                            .basic_block(Some(format!("%bb{}_LAnd_if_block_1", my_ir_generator_info.bb_cnt)));
+                        my_ir_generator_info.bb_cnt += 1;
                         let block_end = program
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .new_bb()
-                            .basic_block(Some(format!("%LAnd_if_block_end")));
+                            .basic_block(Some(format!("%bb{}_LAnd_if_block_end", my_ir_generator_info.bb_cnt)));
+                        my_ir_generator_info.bb_cnt += 1;
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
                         let result_ptr =

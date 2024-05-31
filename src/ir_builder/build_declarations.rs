@@ -28,7 +28,7 @@ impl IRBuildable for FuncDef {
         let new_block = func_data
             .dfg_mut()
             .new_bb()
-            .basic_block(Some("%entry".to_string()));
+            .basic_block(None);
         func_data.layout_mut().bbs_mut().extend([new_block]);
         my_ir_generator_info.curr_block = Some(new_block);
         my_ir_generator_info.curr_func = Some(func);
