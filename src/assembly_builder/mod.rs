@@ -3,12 +3,16 @@
 
 mod build_assembly;
 use std::collections::HashMap;
+use std::io::Write;
 
 use build_assembly::AssemblyBuildable;
 use koopa::ir::{Program, Value};
 
 pub fn generate_assembly(program: &Program, output_file: &mut std::fs::File) -> Result<(), String> {
-    program.build(output_file)?;
+    let codes = program.build()?;
+    for code in codes {
+        writeln!(output_file, "{}", code).expect("Write error. ");
+    }
     Ok(())
 }
 
@@ -41,7 +45,7 @@ impl MyAssemblyGeneratorInfo {
     /// If all registers are being used, then kicks one and returns the kicked register and its former user (Value).
     /// Else returns the empty register and None.
     /// This function should not be called outside.
-    fn __get_usable_register(&mut self) -> usize {
+    fn __get_usable_register(&mut self) -> Result<usize, String> {
         let mut now_min = std::i32::MAX;
         let mut choice: Option<usize> = None;
         for i in REGISTER_FOR_TEMP {
@@ -52,35 +56,39 @@ impl MyAssemblyGeneratorInfo {
                         choice = Some(i);
                     }
                 }
-                None => return i,
+                None => return Ok(i),
             }
         }
         let _choice = choice.unwrap();
         // Kick a value and store it to the stack. TODO.
-        panic!("Not enough register! This probably should not happen. ")
+        Err(format!(
+            "Not enough register! This probably should not happen. "
+        ))
     }
 
     /// Finds where this value is stored.
     /// If in stack, kick a value in a register and bring it back to the register.
-    fn find_using_register(&self, value: Value) -> usize {
+    fn find_using_register(&self, value: Value) -> Result<usize, String> {
         for i in 0..32 {
             if let Some(v) = self.register_user[i] {
                 if v == value {
-                    return i;
+                    return Ok(i);
                 }
             }
         }
         // Value stored in the stack. Bring it back to a register.
-        todo!()
+        Err(format!(
+            "Value not in register! This probably should not happen. "
+        ))
     }
 
     /// Allocates a register for a value.
     /// The register is automatically selected.
-    fn allocate_register(&mut self, value: Value) -> usize {
-        let reg = self.__get_usable_register();
+    fn allocate_register(&mut self, value: Value) -> Result<usize, String> {
+        let reg = self.__get_usable_register()?;
         self.register_user[reg] = Some(value);
         self.register_used_time[reg] = self.curr_time;
-        reg
+        Ok(reg)
     }
 
     /// Frees a register.

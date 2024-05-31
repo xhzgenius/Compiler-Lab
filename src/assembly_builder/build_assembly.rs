@@ -1,57 +1,53 @@
 //! Convert a single Koopa IR component into assembly code.
 
-use std::io::Write;
+use std::vec;
 
 use super::{MyAssemblyGeneratorInfo, REGISTER_NAMES};
 use koopa::ir::{FunctionData, Program, Value};
 
 pub trait AssemblyBuildable {
-    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String>;
+    fn build(&self) -> Result<Vec<String>, String>;
 }
 
 impl AssemblyBuildable for Program {
-    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String> {
+    fn build(&self) -> Result<Vec<String>, String> {
         // Assembly code of global variables
         // TODO
 
         // Assembly code of functions
-        writeln!(output_file, "  .text").expect("Write error. ");
+        let mut function_codes = vec![];
+        function_codes.push(format!("  .text"));
         for &func in self.func_layout() {
-            self.func(func).build(output_file)?;
+            function_codes.extend(self.func(func).build()?);
         }
-        Ok(())
+        Ok(function_codes)
     }
 }
 
-/// Given a value, find which register it should use.
+/// Given a value, find which register it should use. Also returns the loading instruction code(s).
 fn get_reg(
     fd: &FunctionData,
     value: Value,
     my_agi: &mut MyAssemblyGeneratorInfo,
-    output_file: &mut std::fs::File,
-) -> Result<usize, String> {
+) -> Result<(usize, Vec<String>), String> {
     match fd.dfg().value(value).kind() {
         koopa::ir::ValueKind::Integer(int) => {
             // Allocate a new register for the Integer.
             // I don't want to use assembly codes like addi because I am lazy.
             if int.value() == 0 {
-                Ok(0) // Register x0(id=0) is always 0.
+                Ok((0, vec![])) // Register x0(id=0) is always 0.
             } else {
                 // Allocate a new register for the constant integer.
-                let reg = my_agi.allocate_register(value);
-                writeln!(
-                    output_file,
-                    "  li\t{}, {}",
-                    REGISTER_NAMES[reg],
-                    int.value()
-                )
-                .expect("Write error. ");
-                Ok(reg)
+                let reg = my_agi.allocate_register(value)?;
+                Ok((
+                    reg,
+                    vec![format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value())],
+                ))
             }
         }
         _ => {
             // Use the register allocated for this expression or left value.
-            // A register should be allocated. 
+            // A register should be allocated.
             // let reg = my_agi.find_using_register(value).expect(
             //     format!(
             //         "No register for expression. This should not happen. \n{:?}{:?}",
@@ -60,13 +56,8 @@ fn get_reg(
             //     )
             //     .as_str(),
             // );
-            let reg = my_agi.find_using_register(value);
-            Ok(reg)
+            Ok((my_agi.find_using_register(value)?, vec![]))
         }
-        // value_kind => Err(format!(
-        //     "Wrong type, can't find register for it: {:?}",
-        //     value_kind
-        // )),
     }
 }
 
@@ -199,9 +190,10 @@ fn binary_op_to_assembly(
 }
 
 impl AssemblyBuildable for FunctionData {
-    fn build(&self, output_file: &mut std::fs::File) -> Result<(), String> {
-        writeln!(output_file, "  .global {}", &self.name()[1..]).expect("Write error. ");
-        writeln!(output_file, "{}:", &self.name()[1..]).expect("Write error. ");
+    fn build(&self) -> Result<Vec<String>, String> {
+        let mut prologue_codes = vec![];
+        prologue_codes.push(format!("  .global {}", &self.name()[1..]));
+        prologue_codes.push(format!("{}:", &self.name()[1..]));
 
         // Clear register usages when entering the function.
         let mut my_agi = MyAssemblyGeneratorInfo::new();
@@ -232,18 +224,15 @@ impl AssemblyBuildable for FunctionData {
 
         // Function prologue: change the stack pointer.
         if local_var_size <= 2048 {
-            writeln!(output_file, "  addi\tsp, sp, -{}", local_var_size).expect("Write error. ");
+            prologue_codes.push(format!("  addi\tsp, sp, -{}", local_var_size));
         } else {
-            writeln!(
-                output_file,
-                "  li\tt0, -{}\n  add\tsp, sp, t0",
-                local_var_size
-            )
-            .expect("Write error. ");
+            prologue_codes.push(format!("  li\tt0, -{}\n  add\tsp, sp, t0", local_var_size));
         }
 
         // Save callee-saved registers.
         // (Currently no callee-saved registers need to be saved. )
+
+        let mut body_codes = vec![];
 
         for (&block, node) in self.layout().bbs() {
             // At the beginning of the BasicBlock, declare its name.
@@ -255,7 +244,7 @@ impl AssemblyBuildable for FunctionData {
                 .name()
                 .clone();
             if let Some(bb_name) = possible_bb_name {
-                writeln!(output_file, "\n{}:", &bb_name[1..]).expect("Write error. ");
+                body_codes.push(format!("\n{}:", &bb_name[1..]));
             }
 
             // Generate instructions.
@@ -274,44 +263,39 @@ impl AssemblyBuildable for FunctionData {
                                 match return_value_data.kind() {
                                     // Integer return value
                                     koopa::ir::ValueKind::Integer(int) => {
-                                        writeln!(output_file, "  li\ta0, {}", int.value())
-                                            .expect("Write error. ");
+                                        body_codes.push(format!("  li\ta0, {}", int.value()));
                                     }
                                     // Other return values (result of binary expressions or left values)
                                     _ => {
-                                        writeln!(
-                                            output_file,
+                                        body_codes.push(format!(
                                             "  mv\ta0, {}",
                                             REGISTER_NAMES
-                                                [my_agi.find_using_register(return_value)]
-                                        )
-                                        .expect("Write error. ");
+                                                [my_agi.find_using_register(return_value)?]
+                                        ));
                                     }
                                 }
                             }
                             None => {}
                         }
                         // Jump to the return part.
-                        writeln!(output_file, "  j\t{}_ret", &self.name()[1..])
-                            .expect("Write error. ");
+                        body_codes.push(format!("  j\t{}_ret", &self.name()[1..]));
                     }
 
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
-                        let reg1 = get_reg(self, binary.lhs(), &mut my_agi, output_file)?;
-                        let reg2 = get_reg(self, binary.rhs(), &mut my_agi, output_file)?;
+                        let (reg1, codes1) = get_reg(self, binary.lhs(), &mut my_agi)?;
+                        let (reg2, codes2) = get_reg(self, binary.rhs(), &mut my_agi)?;
+                        body_codes.extend(codes1);
+                        body_codes.extend(codes2);
                         my_agi.free_register(reg1);
                         my_agi.free_register(reg2);
                         // Allocate a register for result. It can overwrite lhs or rhs.
-                        let reg_ans = my_agi.allocate_register(value);
-                        writeln!(
-                            output_file,
-                            "{}",
-                            binary_op_to_assembly(binary, reg_ans, reg1, reg2)
-                        )
-                        .expect("Write error. ");
+                        let reg_ans = my_agi.allocate_register(value)?;
+
+                        body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
+
                         // If the result is useless, free the register.
-                        // 我真是他妈天才！
+                        // 我真是他妈天才！但是只天才了一半
                         if self.dfg().value(value).used_by().is_empty() {
                             my_agi.free_register(reg_ans);
                         }
@@ -322,7 +306,8 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        let stored_reg = get_reg(self, store.value(), &mut my_agi, output_file)?;
+                        let (stored_reg, codes) = get_reg(self, store.value(), &mut my_agi)?;
+                        body_codes.extend(codes);
                         let local_var_name = self
                             .dfg()
                             .value(store.dest())
@@ -340,23 +325,19 @@ impl AssemblyBuildable for FunctionData {
                                 .as_str(),
                             );
                         if offset <= 2047 {
-                            writeln!(
-                                output_file,
+                            body_codes.push(format!(
                                 "  sw\t{}, {}(sp)",
                                 REGISTER_NAMES[stored_reg], offset
-                            )
-                            .expect("Write error. ");
+                            ));
                         } else {
-                            let tmp_reg = my_agi.allocate_register(value);
-                            writeln!(
-                                output_file,
+                            let tmp_reg = my_agi.allocate_register(value)?;
+                            body_codes.push(format!(
                                 "  li\t{}, {}\n  sw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
                                 offset,
                                 REGISTER_NAMES[stored_reg],
                                 REGISTER_NAMES[tmp_reg]
-                            )
-                            .expect("Write error. ");
+                            ));
                             my_agi.free_register(tmp_reg);
                         }
                         my_agi.free_register(stored_reg);
@@ -364,7 +345,7 @@ impl AssemblyBuildable for FunctionData {
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        let loaded_reg = my_agi.allocate_register(value);
+                        let loaded_reg = my_agi.allocate_register(value)?;
                         let local_var_name = self
                             .dfg()
                             .value(load.src())
@@ -382,31 +363,26 @@ impl AssemblyBuildable for FunctionData {
                                 .as_str(),
                             );
                         if offset <= 2047 {
-                            writeln!(
-                                output_file,
+                            body_codes.push(format!(
                                 "  lw\t{}, {}(sp)",
                                 REGISTER_NAMES[loaded_reg], offset
-                            )
-                            .expect("Write error. ");
+                            ));
                         } else {
-                            let tmp_reg = my_agi.allocate_register(value);
-                            writeln!(
-                                output_file,
+                            let tmp_reg = my_agi.allocate_register(value)?;
+                            body_codes.push(format!(
                                 "  li\t{}, {}\n  lw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
                                 offset,
                                 REGISTER_NAMES[loaded_reg],
                                 REGISTER_NAMES[tmp_reg]
-                            )
-                            .expect("Write error. ");
+                            ));
                             my_agi.free_register(tmp_reg);
                         }
                     }
 
                     // Jump operation
                     koopa::ir::ValueKind::Jump(jump) => {
-                        writeln!(
-                            output_file,
+                        body_codes.push(format!(
                             "  j\t{}",
                             &self
                                 .dfg()
@@ -417,18 +393,16 @@ impl AssemblyBuildable for FunctionData {
                                 .clone()
                                 .expect("Jump target BasicBlock has no name. Should not happen. ")
                                 [1..]
-                        )
-                        .expect("Write error. ");
+                        ));
                     }
 
                     // Branch operation
                     koopa::ir::ValueKind::Branch(branch) => {
-                        let cond_reg_name =
-                            REGISTER_NAMES[get_reg(self, branch.cond(), &mut my_agi, output_file)?];
-                        writeln!(
-                            output_file,
+                        let (cond_reg, codes) = get_reg(self, branch.cond(), &mut my_agi)?;
+                        body_codes.extend(codes);
+                        body_codes.push(format!(
                             "  bnez\t{}, {}",
-                            cond_reg_name,
+                            REGISTER_NAMES[cond_reg],
                             &self
                                 .dfg()
                                 .bbs()
@@ -438,10 +412,8 @@ impl AssemblyBuildable for FunctionData {
                                 .clone()
                                 .expect("Branch BasicBlock 1 has no name. Should not happen. ")
                                 [1..]
-                        )
-                        .expect("Write error. ");
-                        writeln!(
-                            output_file,
+                        ));
+                        body_codes.push(format!(
                             "  j\t{}",
                             &self
                                 .dfg()
@@ -452,8 +424,7 @@ impl AssemblyBuildable for FunctionData {
                                 .clone()
                                 .expect("Branch BasicBlock 2 has no name. Should not happen. ")
                                 [1..]
-                        )
-                        .expect("Write error. ");
+                        ));
                     }
 
                     // Other instructions (TODO: Not implemented)
@@ -471,20 +442,21 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be restored. )
 
         // Function epilogue: change the stack pointer.
-        writeln!(output_file, "\n{}_ret:", &self.name()[1..]).expect("Write error. ");
+        let mut epilogue_codes = vec![];
+        epilogue_codes.push(format!("\n{}_ret:", &self.name()[1..]));
         if local_var_size <= 2047 {
-            writeln!(output_file, "  addi\tsp, sp, {}", local_var_size).expect("Write error. ");
+            epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
         } else {
-            writeln!(
-                output_file,
-                "  li\tt0, {}\n  add\tsp, sp, t0",
-                local_var_size
-            )
-            .expect("Write error. ");
+            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
         }
 
         // Return
-        writeln!(output_file, "  ret").expect("Write error. ");
-        Ok(())
+        epilogue_codes.push(format!("  ret"));
+
+        let mut all_codes = vec![];
+        all_codes.extend(prologue_codes);
+        all_codes.extend(body_codes);
+        all_codes.extend(epilogue_codes);
+        Ok(all_codes)
     }
 }
