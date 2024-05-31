@@ -81,7 +81,10 @@ impl FuncValueTable {
         let kicked_value = self.register_user[choice].unwrap();
         self.register_user[choice] = None;
         self.register_used_time[choice] = 0;
-        let store_location = self.value_location.get(&kicked_value).unwrap();
+        let store_location = self
+            .value_location
+            .get(&kicked_value)
+            .expect("Can't find kicked value in table. Seems impossible. ");
         let mut codes = vec![];
         codes.push(format!(
             "  sw\t{}, {}(sp)",
@@ -120,7 +123,7 @@ impl FuncValueTable {
             let old_location = self
                 .value_location
                 .get(&value)
-                .expect("Can't find value in table. ");
+                .expect("Can't find wanted-to-visit value in table. ");
             codes.push(format!(
                 "  lw\t{}, {}(sp)",
                 REGISTER_NAMES[reg], old_location,

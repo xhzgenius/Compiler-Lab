@@ -161,19 +161,15 @@ impl AssemblyBuildable for FunctionData {
         // Clear register usages when entering the function.
         let mut my_table = FuncValueTable::new();
 
-        // In my compiler, every defined local variable (like "@y = alloc i32") has its place in memory.
-        // Temporary values are stored in registers.
-        // If registers are not enough, redundant temp values will be stored in memory.
-        // It works like a LRU cache.
+        // In my compiler, every defined local variable (like "@y = alloc i32")
+        // and temp values has its place in memory.
+        // The registers work like a LRU cache.
 
         let mut local_var_size = 0; // Bytes for storing all local variables.
 
         for (&_block, node) in self.layout().bbs() {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                if !value_data.kind().is_local_inst() {
-                    continue;
-                }
                 my_table.value_location.insert(value, local_var_size);
                 local_var_size += value_data.ty().size();
             }
@@ -217,22 +213,6 @@ impl AssemblyBuildable for FunctionData {
                         // Does it have a return value?
                         match return_inst.value() {
                             Some(return_value) => {
-                                // let return_value_data = self.dfg().value(return_value);
-                                // // Return value kind:
-                                // match return_value_data.kind() {
-                                //     // Integer return value
-                                //     koopa::ir::ValueKind::Integer(int) => {
-                                //         body_codes.push(format!("  li\ta0, {}", int.value()));
-                                //     }
-                                //     // Other return values (result of binary expressions or left values)
-                                //     _ => {
-                                //         let (reg, codes) =
-                                //             my_table.want_to_visit_value(value, self, true);
-                                //         body_codes.extend(codes);
-                                //         body_codes
-                                //             .push(format!("  mv\ta0, {}", REGISTER_NAMES[reg]));
-                                //     }
-                                // }
                                 let (reg, codes) =
                                     my_table.want_to_visit_value(return_value, self, true);
                                 body_codes.extend(codes);
@@ -250,11 +230,7 @@ impl AssemblyBuildable for FunctionData {
                         let (reg2, codes2) = my_table.want_to_visit_value(binary.rhs(), self, true);
                         body_codes.extend(codes1);
                         body_codes.extend(codes2);
-                        // my_table.free_register(reg1);
-                        // my_table.free_register(reg2);
-                        // Allocate a register for result. It can overwrite lhs or rhs.
                         let (reg_ans, codes) = my_table.want_to_visit_value(value, self, false);
-
                         body_codes.extend(codes);
                         body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
 
