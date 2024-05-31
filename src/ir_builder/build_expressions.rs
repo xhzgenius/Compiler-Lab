@@ -1,9 +1,11 @@
 //! Build a single component into Koopa IR.
 
 use crate::ast_def::expressions::*;
-use koopa::ir::{builder_traits::*, Program, Value};
+use koopa::ir::{builder_traits::*, Program, Type, Value};
 
-use super::{MyIRGeneratorInfo, SymbolTableEntry, create_new_value, insert_instructions};
+use super::{
+    create_new_value, insert_basic_blocks, insert_instructions, MyIRGeneratorInfo, SymbolTableEntry,
+};
 
 /// IR expression building result. If the expression is a constant expression, returns the i32 result.
 /// Otherwise, returns the Koopa IR Value.
@@ -121,27 +123,101 @@ impl IRExpBuildable for LOrExp {
         match self {
             LOrExp::LAndExp(exp) => exp.build(program, my_ir_generator_info),
             LOrExp::BinaryLOrExp(exp1, exp2) => {
-                let result1 = build_binary_from_build_results(
-                    exp1.build(program, my_ir_generator_info)?,
-                    IRExpBuildResult::Const(0),
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::NotEq,
-                )?;
-                let result2 = build_binary_from_build_results(
-                    IRExpBuildResult::Const(0),
-                    exp2.build(program, my_ir_generator_info)?,
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::NotEq,
-                )?;
-                build_binary_from_build_results(
-                    result1,
-                    result2,
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::Or,
-                )
+                // Build exp1.
+                let exp1_build_result = exp1.build(program, my_ir_generator_info)?;
+
+                match exp1_build_result {
+                    // If exp1 is variable.
+                    IRExpBuildResult::Value(value1) => {
+                        // Prepare for shortcut.
+                        /*
+                           int result = 1;
+                           if (lhs == 0) {
+                               result = rhs!=0;
+                           }
+                        */
+                        let block1 = program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .new_bb()
+                            .basic_block(Some(format!("%LOr_if_block_1")));
+                        let block_end = program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .new_bb()
+                            .basic_block(Some(format!("%LOr_if_block_end")));
+                        insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
+
+                        let result_ptr =
+                            create_new_value(program, my_ir_generator_info).alloc(Type::get_i32());
+                        program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .set_value_name(result_ptr, Some(format!("@LOr_result")));
+                        let one = create_new_value(program, my_ir_generator_info).integer(1);
+                        let zero = create_new_value(program, my_ir_generator_info).integer(0);
+                        let store_inst =
+                            create_new_value(program, my_ir_generator_info).store(one, result_ptr);
+
+                        let cond = create_new_value(program, my_ir_generator_info).binary(
+                            koopa::ir::BinaryOp::Eq,
+                            value1,
+                            zero,
+                        );
+                        let branch_inst = create_new_value(program, my_ir_generator_info)
+                            .branch(cond, block1, block_end);
+                        insert_instructions(
+                            program,
+                            my_ir_generator_info,
+                            [result_ptr, store_inst, cond, branch_inst],
+                        );
+
+                        my_ir_generator_info.curr_block = Some(block1);
+                        let result2 = build_binary_from_build_results(
+                            IRExpBuildResult::Const(0),
+                            exp2.build(program, my_ir_generator_info)?,
+                            program,
+                            my_ir_generator_info,
+                            koopa::ir::BinaryOp::NotEq,
+                        )?;
+                        let value2 = match result2 {
+                            IRExpBuildResult::Const(i2) => {
+                                create_new_value(program, my_ir_generator_info).integer(i2)
+                            }
+                            IRExpBuildResult::Value(v2) => v2,
+                        };
+                        let store_new_inst = create_new_value(program, my_ir_generator_info)
+                            .store(value2, result_ptr);
+                        let jmp_inst =
+                            create_new_value(program, my_ir_generator_info).jump(block_end);
+                        insert_instructions(
+                            program,
+                            my_ir_generator_info,
+                            [store_new_inst, jmp_inst],
+                        );
+
+                        my_ir_generator_info.curr_block = Some(block_end);
+                        let loaded_result =
+                            create_new_value(program, my_ir_generator_info).load(result_ptr);
+                        insert_instructions(program, my_ir_generator_info, [loaded_result]);
+                        Ok(IRExpBuildResult::Value(loaded_result))
+                    }
+
+                    // If exp1 is constant.
+                    IRExpBuildResult::Const(i1) => {
+                        if i1 != 0 {
+                            Ok(IRExpBuildResult::Const(1))
+                        } else {
+                            build_binary_from_build_results(
+                                IRExpBuildResult::Const(0),
+                                exp2.build(program, my_ir_generator_info)?,
+                                program,
+                                my_ir_generator_info,
+                                koopa::ir::BinaryOp::NotEq,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -156,27 +232,100 @@ impl IRExpBuildable for LAndExp {
         match self {
             LAndExp::EqExp(exp) => exp.build(program, my_ir_generator_info),
             LAndExp::BinaryLAndExp(exp1, exp2) => {
-                let result1 = build_binary_from_build_results(
-                    exp1.build(program, my_ir_generator_info)?,
-                    IRExpBuildResult::Const(0),
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::NotEq,
-                )?;
-                let result2 = build_binary_from_build_results(
-                    IRExpBuildResult::Const(0),
-                    exp2.build(program, my_ir_generator_info)?,
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::NotEq,
-                )?;
-                build_binary_from_build_results(
-                    result1,
-                    result2,
-                    program,
-                    my_ir_generator_info,
-                    koopa::ir::BinaryOp::And,
-                )
+                // Build exp1.
+                let exp1_build_result = exp1.build(program, my_ir_generator_info)?;
+
+                match exp1_build_result {
+                    // If exp1 is variable.
+                    IRExpBuildResult::Value(value1) => {
+                        // Prepare for shortcut.
+                        /*
+                           int result = 0;
+                           if (lhs != 0) {
+                               result = rhs!=0;
+                           }
+                        */
+                        let block1 = program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .new_bb()
+                            .basic_block(Some(format!("%LAnd_if_block_1")));
+                        let block_end = program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .new_bb()
+                            .basic_block(Some(format!("%LAnd_if_block_end")));
+                        insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
+
+                        let result_ptr =
+                            create_new_value(program, my_ir_generator_info).alloc(Type::get_i32());
+                        program
+                            .func_mut(my_ir_generator_info.curr_func.unwrap())
+                            .dfg_mut()
+                            .set_value_name(result_ptr, Some(format!("@LAnd_result")));
+                        let zero = create_new_value(program, my_ir_generator_info).integer(0);
+                        let store_inst =
+                            create_new_value(program, my_ir_generator_info).store(zero, result_ptr);
+
+                        let cond = create_new_value(program, my_ir_generator_info).binary(
+                            koopa::ir::BinaryOp::NotEq,
+                            value1,
+                            zero,
+                        );
+                        let branch_inst = create_new_value(program, my_ir_generator_info)
+                            .branch(cond, block1, block_end);
+                        insert_instructions(
+                            program,
+                            my_ir_generator_info,
+                            [result_ptr, store_inst, cond, branch_inst],
+                        );
+
+                        my_ir_generator_info.curr_block = Some(block1);
+                        let result2 = build_binary_from_build_results(
+                            IRExpBuildResult::Const(0),
+                            exp2.build(program, my_ir_generator_info)?,
+                            program,
+                            my_ir_generator_info,
+                            koopa::ir::BinaryOp::NotEq,
+                        )?;
+                        let value2 = match result2 {
+                            IRExpBuildResult::Const(i2) => {
+                                create_new_value(program, my_ir_generator_info).integer(i2)
+                            }
+                            IRExpBuildResult::Value(v2) => v2,
+                        };
+                        let store_new_inst = create_new_value(program, my_ir_generator_info)
+                            .store(value2, result_ptr);
+                        let jmp_inst =
+                            create_new_value(program, my_ir_generator_info).jump(block_end);
+                        insert_instructions(
+                            program,
+                            my_ir_generator_info,
+                            [store_new_inst, jmp_inst],
+                        );
+
+                        my_ir_generator_info.curr_block = Some(block_end);
+                        let loaded_result =
+                            create_new_value(program, my_ir_generator_info).load(result_ptr);
+                        insert_instructions(program, my_ir_generator_info, [loaded_result]);
+                        Ok(IRExpBuildResult::Value(loaded_result))
+                    }
+
+                    // If exp1 is constant.
+                    IRExpBuildResult::Const(i1) => {
+                        if i1 == 0 {
+                            Ok(IRExpBuildResult::Const(0))
+                        } else {
+                            build_binary_from_build_results(
+                                IRExpBuildResult::Const(0),
+                                exp2.build(program, my_ir_generator_info)?,
+                                program,
+                                my_ir_generator_info,
+                                koopa::ir::BinaryOp::NotEq,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -347,7 +496,7 @@ impl IRExpBuildable for PrimaryExp {
                 match result {
                     IRExpBuildResult::Const(_int) => Ok(result),
                     IRExpBuildResult::Value(ptr) => {
-                        // If the PrimaryExp is a variable, then load it. 
+                        // If the PrimaryExp is a variable, then load it.
                         let load_inst = create_new_value(program, my_ir_generator_info).load(ptr);
                         insert_instructions(program, my_ir_generator_info, [load_inst]);
                         Ok(IRExpBuildResult::Value(load_inst))
@@ -367,7 +516,9 @@ impl IRExpBuildable for LVal {
     ) -> Result<IRExpBuildResult, String> {
         match self {
             LVal::IDENT(ident) => match my_ir_generator_info.symbol_tables.get(&ident.content) {
-                Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRExpBuildResult::Value(*ptr)),
+                Some(SymbolTableEntry::Variable(_lval_type, ptr)) => {
+                    Ok(IRExpBuildResult::Value(*ptr))
+                }
                 Some(SymbolTableEntry::Constant(_lval_type, values)) => {
                     Ok(IRExpBuildResult::Const(values[0]))
                 }
