@@ -1,25 +1,15 @@
 fun @main(): i32 {
-%entry:
+%0:
   @a_1 = alloc i32
   store 2, @a_1
-  %0 = load @a_1
-  @LAnd_result = alloc i32
-  store 0, @LAnd_result
-  %1 = ne %0, 0
-  br %1, %LAnd_if_block_1, %LAnd_if_block_end
+  %1 = load @a_1
+  %2 = ne 0, %1
+  br %2, %bb1_if_block_1, %bb0_if_block_end
 
-%LAnd_if_block_1:
-  store 1, @LAnd_result
-  jump %LAnd_if_block_end
+%bb1_if_block_1:
+  ret 0
 
-%LAnd_if_block_end:
-  %2 = load @LAnd_result
-  br %2, %if_block_1, %if_block_end
-
-%if_block_1:
-  ret
-
-%if_block_end:
+%bb0_if_block_end:
   %3 = load @a_1
   ret %3
 }

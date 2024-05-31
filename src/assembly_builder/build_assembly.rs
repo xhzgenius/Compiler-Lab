@@ -291,6 +291,8 @@ impl AssemblyBuildable for FunctionData {
                             }
                             None => {}
                         }
+                        // Jump to the return part. 
+                        writeln!(output_file, "  j\t{}_ret", &self.name()[1..]).expect("Write error. ");
                     }
 
                     // Binary operation
@@ -463,6 +465,7 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be restored. )
 
         // Function epilogue: change the stack pointer.
+        writeln!(output_file, "\n{}_ret:", &self.name()[1..]).expect("Write error. ");
         if local_var_size <= 2047 {
             writeln!(output_file, "  addi\tsp, sp, {}", local_var_size).expect("Write error. ");
         } else {

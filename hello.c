@@ -1,7 +1,7 @@
 int main() {
   int a = 2;
-  if (a) {
-    a = 5;
+  if (0||a) {
+    return 0;
   }
   return a;
 }
