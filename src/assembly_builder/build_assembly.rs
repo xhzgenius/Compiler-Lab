@@ -3,7 +3,7 @@
 use std::vec;
 
 use super::{FuncValueTable, REGISTER_NAMES};
-use koopa::ir::{FunctionData, Program, Value};
+use koopa::ir::{FunctionData, Program};
 
 pub trait AssemblyBuildable {
     fn build(&self) -> Result<Vec<String>, String>;

@@ -1,4 +1,5 @@
 int main() {
-  int a = 12345;
-  return a && 0 || a || 1 && a;
+  while (1) break;
+  while (0) continue;
+  return 0;
 }

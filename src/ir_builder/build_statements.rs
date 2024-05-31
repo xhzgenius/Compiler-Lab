@@ -5,8 +5,8 @@ use koopa::ir::{builder_traits::*, Program};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
-    create_new_value, insert_basic_blocks, insert_instructions, IRBuildResult, IRBuildable,
-    MyIRGeneratorInfo,
+    create_new_block, create_new_value, insert_basic_blocks, insert_instructions, IRBuildResult,
+    IRBuildable, MyIRGeneratorInfo,
 };
 
 impl IRBuildable for Stmt {
@@ -92,23 +92,13 @@ impl IRBuildable for BasicStmt {
                     }
                     IRExpBuildResult::Value(value) => value,
                 };
-                let block_end = program
-                    .func_mut(my_ir_generator_info.curr_func.unwrap())
-                    .dfg_mut()
-                    .new_bb()
-                    .basic_block(Some(format!("%bb{}_if_block_end", my_ir_generator_info.bb_cnt)));
-                my_ir_generator_info.bb_cnt += 1;
+                let block_end = create_new_block(program, my_ir_generator_info, "if_block_end");
                 let block_start = my_ir_generator_info
                     .curr_block
                     .expect("No current block. Should not happen! ");
 
                 // Build the block 1, which ends with a jump to the ending block.
-                let block1 = program
-                    .func_mut(my_ir_generator_info.curr_func.unwrap())
-                    .dfg_mut()
-                    .new_bb()
-                    .basic_block(Some(format!("%bb{}_if_block_1", my_ir_generator_info.bb_cnt)));
-                my_ir_generator_info.bb_cnt += 1;
+                let block1 = create_new_block(program, my_ir_generator_info, "if_block_1");
                 // Remember to insert basic blocks into the current function's data flow graph.
                 insert_basic_blocks(program, my_ir_generator_info, [block1]);
                 my_ir_generator_info.curr_block = Some(block1);
@@ -124,12 +114,7 @@ impl IRBuildable for BasicStmt {
                 // If there is block 2, build block 2, which ends with a jump to the ending block.
                 let jmp_block = match &**possible_stmt2 {
                     Some(stmt2) => {
-                        let block2 = program
-                            .func_mut(my_ir_generator_info.curr_func.unwrap())
-                            .dfg_mut()
-                            .new_bb()
-                            .basic_block(Some(format!("%bb{}_if_block_2", my_ir_generator_info.bb_cnt)));
-                        my_ir_generator_info.bb_cnt += 1;
+                        let block2 = create_new_block(program, my_ir_generator_info, "if_block_2");
                         // Remember to insert the basic block into the current function's data flow graph.
                         insert_basic_blocks(program, my_ir_generator_info, [block2]);
                         my_ir_generator_info.curr_block = Some(block2);
@@ -156,14 +141,71 @@ impl IRBuildable for BasicStmt {
 
                 Ok(IRBuildResult::OK)
             }
-            BasicStmt::WhileStmt(exp, stmt) => {
+            BasicStmt::WhileStmt(cond, stmt) => {
+                // Creat blocks for the while statement.
+
+                let block_start = create_new_block(program, my_ir_generator_info, "while_start");
+                let block_body = create_new_block(program, my_ir_generator_info, "while_body");
+                let block_end = create_new_block(program, my_ir_generator_info, "while_end");
+                insert_basic_blocks(
+                    program,
+                    my_ir_generator_info,
+                    [block_start, block_body, block_end],
+                );
+
+                // Jump to while start.
+                let start_jmp_inst =
+                    create_new_value(program, my_ir_generator_info).jump(block_start);
+                insert_instructions(program, my_ir_generator_info, [start_jmp_inst]);
+
+                // Build while start.
+                my_ir_generator_info.curr_block = Some(block_start);
+                let cond_value = match cond.build(program, my_ir_generator_info)? {
+                    IRExpBuildResult::Const(int) => {
+                        create_new_value(program, my_ir_generator_info).integer(int)
+                    }
+                    IRExpBuildResult::Value(value) => value,
+                };
+                let branch_inst = create_new_value(program, my_ir_generator_info)
+                    .branch(cond_value, block_body, block_end);
+                insert_instructions(program, my_ir_generator_info, [branch_inst]);
+
+                // Build while body.
+                my_ir_generator_info.curr_block = Some(block_body);
+                my_ir_generator_info.break_tgt_blocks.push(block_end);
+                my_ir_generator_info.continue_tgt_blocks.push(block_start);
+                // If there is surely break or continue in the block, no need to jump to while start.
+                match stmt.build(program, my_ir_generator_info)? {
+                    IRBuildResult::OK => {
+                        let jmp_inst =
+                            create_new_value(program, my_ir_generator_info).jump(block_start);
+                        insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                    }
+                    IRBuildResult::EARLYSTOPPING => {}
+                }
+
+                my_ir_generator_info.curr_block = Some(block_end);
+                my_ir_generator_info.break_tgt_blocks.pop();
+                my_ir_generator_info.continue_tgt_blocks.pop();
                 Ok(IRBuildResult::OK)
             }
             BasicStmt::BreakStmt => {
-                Ok(IRBuildResult::OK)
+                let tgt_block = match my_ir_generator_info.break_tgt_blocks.last() {
+                    Some(block) => Ok(block.clone()),
+                    None => Err("Incorrect break statement! "),
+                }?;
+                let jmp_inst = create_new_value(program, my_ir_generator_info).jump(tgt_block);
+                insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                Ok(IRBuildResult::EARLYSTOPPING)
             }
             BasicStmt::ContinueStmt => {
-                Ok(IRBuildResult::OK)
+                let tgt_block = match my_ir_generator_info.continue_tgt_blocks.last() {
+                    Some(block) => Ok(block.clone()),
+                    None => Err("Incorrect continue statement! "),
+                }?;
+                let jmp_inst = create_new_value(program, my_ir_generator_info).jump(tgt_block);
+                insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                Ok(IRBuildResult::EARLYSTOPPING)
             }
             BasicStmt::ReturnStmt(returned_exp) => {
                 let return_value = match returned_exp {

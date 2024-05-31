@@ -4,7 +4,8 @@ use crate::ast_def::expressions::*;
 use koopa::ir::{builder_traits::*, Program, Type, Value};
 
 use super::{
-    create_new_value, insert_basic_blocks, insert_instructions, MyIRGeneratorInfo, SymbolTableEntry,
+    create_new_block, create_new_value, insert_basic_blocks, insert_instructions,
+    MyIRGeneratorInfo, SymbolTableEntry,
 };
 
 /// IR expression building result. If the expression is a constant expression, returns the i32 result.
@@ -136,18 +137,8 @@ impl IRExpBuildable for LOrExp {
                                result = rhs!=0;
                            }
                         */
-                        let block1 = program
-                            .func_mut(my_ir_generator_info.curr_func.unwrap())
-                            .dfg_mut()
-                            .new_bb()
-                            .basic_block(Some(format!("%bb{}_LOr_if_block_1", my_ir_generator_info.bb_cnt)));
-                        my_ir_generator_info.bb_cnt += 1;
-                        let block_end = program
-                            .func_mut(my_ir_generator_info.curr_func.unwrap())
-                            .dfg_mut()
-                            .new_bb()
-                            .basic_block(Some(format!("%bb{}_LOr_if_block_end", my_ir_generator_info.bb_cnt)));
-                        my_ir_generator_info.bb_cnt += 1;
+                        let block1 = create_new_block(program, my_ir_generator_info, "LOr_if_block");
+                        let block_end = create_new_block(program, my_ir_generator_info, "LOr_if_block_end");
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
                         let result_ptr =
@@ -247,18 +238,10 @@ impl IRExpBuildable for LAndExp {
                                result = rhs!=0;
                            }
                         */
-                        let block1 = program
-                            .func_mut(my_ir_generator_info.curr_func.unwrap())
-                            .dfg_mut()
-                            .new_bb()
-                            .basic_block(Some(format!("%bb{}_LAnd_if_block_1", my_ir_generator_info.bb_cnt)));
-                        my_ir_generator_info.bb_cnt += 1;
-                        let block_end = program
-                            .func_mut(my_ir_generator_info.curr_func.unwrap())
-                            .dfg_mut()
-                            .new_bb()
-                            .basic_block(Some(format!("%bb{}_LAnd_if_block_end", my_ir_generator_info.bb_cnt)));
-                        my_ir_generator_info.bb_cnt += 1;
+                        let block1 =
+                            create_new_block(program, my_ir_generator_info, "LAnd_if_block");
+                        let block_end =
+                            create_new_block(program, my_ir_generator_info, "LAnd_if_block_end");
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
                         let result_ptr =

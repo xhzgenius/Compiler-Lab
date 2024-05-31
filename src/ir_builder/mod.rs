@@ -5,6 +5,7 @@ mod build_declarations;
 mod build_expressions;
 mod build_statements;
 use crate::ast_def::*;
+use koopa::ir::builder_traits::BasicBlockBuilder;
 use koopa::ir::entities::{BasicBlock, Function, Value}; // Koopa IR builder
 use koopa::ir::{Program, TypeKind}; // All the symbol defined in the AST
 use std::collections::HashMap;
@@ -13,6 +14,8 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
     let mut program = Program::new();
     let mut my_ir_generator_info = MyIRGeneratorInfo {
         curr_block: None,
+        break_tgt_blocks: vec![],
+        continue_tgt_blocks: vec![],
         curr_func: None,
         symbol_tables: SymbolTableStack {
             symbol_tables: vec![HashMap::new()],
@@ -25,10 +28,12 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
 
 #[derive(Debug)]
 pub struct MyIRGeneratorInfo {
-    curr_block: Option<BasicBlock>,  // Current block
-    curr_func: Option<Function>,     // Current function
-    symbol_tables: SymbolTableStack, // Symbol table: ident-(type, Value)
-    bb_cnt: usize,                   // Number of BasicBlocks
+    curr_block: Option<BasicBlock>,          // Current block
+    break_tgt_blocks: Vec<BasicBlock>,    // Target blocks of break statements
+    continue_tgt_blocks: Vec<BasicBlock>, // Target blocks of continue statements
+    curr_func: Option<Function>,             // Current function
+    symbol_tables: SymbolTableStack,         // Symbol table: ident-(type, Value)
+    bb_cnt: usize,                           // Number of BasicBlocks
 }
 
 #[derive(Debug)]
@@ -109,6 +114,21 @@ fn create_new_value<'a>(
         .func_mut(my_ir_generator_info.curr_func.unwrap())
         .dfg_mut()
         .new_value()
+}
+
+/// Helper function to build a new basic block.
+fn create_new_block<'a>(
+    program: &'a mut Program,
+    my_ir_generator_info: &'a mut MyIRGeneratorInfo,
+    name: &str,
+) -> BasicBlock {
+    let block = program
+        .func_mut(my_ir_generator_info.curr_func.unwrap())
+        .dfg_mut()
+        .new_bb()
+        .basic_block(Some(format!("%bb{}_{}", my_ir_generator_info.bb_cnt, name)));
+    my_ir_generator_info.bb_cnt += 1;
+    block
 }
 
 /// Helper function to insert instructions into the current function's data flow graph.

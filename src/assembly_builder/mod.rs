@@ -2,12 +2,11 @@
 //! It converts the Koopa IR into assembly code.
 
 mod build_assembly;
-use core::panic;
 use std::collections::HashMap;
 use std::io::Write;
 
 use build_assembly::AssemblyBuildable;
-use koopa::ir::{FunctionData, Program, TypeKind, Value};
+use koopa::ir::{FunctionData, Program, Value};
 
 pub fn generate_assembly(program: &Program, output_file: &mut std::fs::File) -> Result<(), String> {
     let codes = program.build()?;

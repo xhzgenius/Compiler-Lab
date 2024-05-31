@@ -10,10 +10,10 @@ main_body:
   sw	zero, 12(sp)
   xor	t1, t0, zero
   snez	t1, t1
-  bnez	t1, bb0_LAnd_if_block_1
+  bnez	t1, bb0_LAnd_if_block
   j	bb1_LAnd_if_block_end
 
-bb0_LAnd_if_block_1:
+bb0_LAnd_if_block:
   sw	zero, 12(sp)
   j	bb1_LAnd_if_block_end
 
@@ -23,10 +23,10 @@ bb1_LAnd_if_block_end:
   sw	t3, 28(sp)
   xor	t3, t2, zero
   seqz	t3, t3
-  bnez	t3, bb2_LOr_if_block_1
+  bnez	t3, bb2_LOr_if_block
   j	bb3_LOr_if_block_end
 
-bb2_LOr_if_block_1:
+bb2_LOr_if_block:
   lw	t4, 0(sp)
   xor	t5, zero, t4
   snez	t5, t5
@@ -39,10 +39,10 @@ bb3_LOr_if_block_end:
   sw	a0, 52(sp)
   xor	a0, x31, zero
   seqz	a0, a0
-  bnez	a0, bb4_LOr_if_block_1
+  bnez	a0, bb4_LOr_if_block
   j	bb5_LOr_if_block_end
 
-bb4_LOr_if_block_1:
+bb4_LOr_if_block:
   lw	a1, 0(sp)
   xor	a2, zero, a1
   snez	a2, a2

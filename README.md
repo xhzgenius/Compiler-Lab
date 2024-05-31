@@ -379,6 +379,21 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 新增的 while 语句只需要在 `BasicStmt` 中一起处理。
 
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv7 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv7 /root/compiler
+```
+
+
 
 ---
 
