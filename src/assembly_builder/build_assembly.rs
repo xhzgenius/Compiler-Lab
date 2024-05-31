@@ -16,7 +16,6 @@ impl AssemblyBuildable for Program {
 
         // Assembly code of functions
         let mut function_codes = vec![];
-        function_codes.push(format!("  .text"));
         for &func in self.func_layout() {
             function_codes.extend(self.func(func).build()?);
         }
@@ -155,6 +154,7 @@ fn binary_op_to_assembly(
 impl AssemblyBuildable for FunctionData {
     fn build(&self) -> Result<Vec<String>, String> {
         let mut prologue_codes = vec![];
+        prologue_codes.push(format!("  .text"));
         prologue_codes.push(format!("  .global {}", &self.name()[1..]));
         prologue_codes.push(format!("{}:", &self.name()[1..]));
 
@@ -188,6 +188,8 @@ impl AssemblyBuildable for FunctionData {
 
         let mut body_codes = vec![];
         body_codes.push(format!("\n{}_body:", &self.name()[1..]));
+
+        dbg!(&self.name(), &my_table);
 
         for (&block, node) in self.layout().bbs() {
             // At the beginning of the BasicBlock, declare its name.
@@ -373,7 +375,7 @@ impl AssemblyBuildable for FunctionData {
         }
 
         // Return
-        epilogue_codes.push(format!("  ret"));
+        epilogue_codes.push(format!("  ret\n"));
 
         let mut all_codes = vec![];
         all_codes.extend(prologue_codes);
