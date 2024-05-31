@@ -4,7 +4,7 @@ use crate::ast_def::expressions::*;
 use koopa::ir::{builder_traits::*, Program, Type, Value};
 
 use super::{
-    create_new_block, create_new_value, insert_basic_blocks, insert_instructions,
+    create_new_block, create_new_local_value, insert_basic_blocks, insert_local_instructions,
     MyIRGeneratorInfo, SymbolTableEntry,
 };
 
@@ -98,19 +98,19 @@ fn build_binary_from_build_results(
     } else {
         let value1 = match result1 {
             IRExpBuildResult::Const(int) => {
-                create_new_value(program, my_ir_generator_info).integer(int)
+                create_new_local_value(program, my_ir_generator_info).integer(int)
             }
             IRExpBuildResult::Value(value) => value,
         };
         let value2 = match result2 {
             IRExpBuildResult::Const(int) => {
-                create_new_value(program, my_ir_generator_info).integer(int)
+                create_new_local_value(program, my_ir_generator_info).integer(int)
             }
             IRExpBuildResult::Value(value) => value,
         };
         let new_value =
-            create_new_value(program, my_ir_generator_info).binary(binary_op, value1, value2);
-        insert_instructions(program, my_ir_generator_info, [new_value]);
+            create_new_local_value(program, my_ir_generator_info).binary(binary_op, value1, value2);
+        insert_local_instructions(program, my_ir_generator_info, [new_value]);
         Ok(IRExpBuildResult::Value(new_value))
     }
 }
@@ -143,25 +143,25 @@ impl IRExpBuildable for LOrExp {
                             create_new_block(program, my_ir_generator_info, "LOr_if_block_end");
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
-                        let result_ptr =
-                            create_new_value(program, my_ir_generator_info).alloc(Type::get_i32());
+                        let result_ptr = create_new_local_value(program, my_ir_generator_info)
+                            .alloc(Type::get_i32());
                         program
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .set_value_name(result_ptr, Some(format!("@LOr_result")));
-                        let one = create_new_value(program, my_ir_generator_info).integer(1);
-                        let zero = create_new_value(program, my_ir_generator_info).integer(0);
-                        let store_inst =
-                            create_new_value(program, my_ir_generator_info).store(one, result_ptr);
+                        let one = create_new_local_value(program, my_ir_generator_info).integer(1);
+                        let zero = create_new_local_value(program, my_ir_generator_info).integer(0);
+                        let store_inst = create_new_local_value(program, my_ir_generator_info)
+                            .store(one, result_ptr);
 
-                        let cond = create_new_value(program, my_ir_generator_info).binary(
+                        let cond = create_new_local_value(program, my_ir_generator_info).binary(
                             koopa::ir::BinaryOp::Eq,
                             value1,
                             zero,
                         );
-                        let branch_inst = create_new_value(program, my_ir_generator_info)
+                        let branch_inst = create_new_local_value(program, my_ir_generator_info)
                             .branch(cond, block1, block_end);
-                        insert_instructions(
+                        insert_local_instructions(
                             program,
                             my_ir_generator_info,
                             [result_ptr, store_inst, cond, branch_inst],
@@ -177,15 +177,15 @@ impl IRExpBuildable for LOrExp {
                         )?;
                         let value2 = match result2 {
                             IRExpBuildResult::Const(i2) => {
-                                create_new_value(program, my_ir_generator_info).integer(i2)
+                                create_new_local_value(program, my_ir_generator_info).integer(i2)
                             }
                             IRExpBuildResult::Value(v2) => v2,
                         };
-                        let store_new_inst = create_new_value(program, my_ir_generator_info)
+                        let store_new_inst = create_new_local_value(program, my_ir_generator_info)
                             .store(value2, result_ptr);
                         let jmp_inst =
-                            create_new_value(program, my_ir_generator_info).jump(block_end);
-                        insert_instructions(
+                            create_new_local_value(program, my_ir_generator_info).jump(block_end);
+                        insert_local_instructions(
                             program,
                             my_ir_generator_info,
                             [store_new_inst, jmp_inst],
@@ -193,8 +193,8 @@ impl IRExpBuildable for LOrExp {
 
                         my_ir_generator_info.curr_block = Some(block_end);
                         let loaded_result =
-                            create_new_value(program, my_ir_generator_info).load(result_ptr);
-                        insert_instructions(program, my_ir_generator_info, [loaded_result]);
+                            create_new_local_value(program, my_ir_generator_info).load(result_ptr);
+                        insert_local_instructions(program, my_ir_generator_info, [loaded_result]);
                         Ok(IRExpBuildResult::Value(loaded_result))
                     }
 
@@ -246,24 +246,24 @@ impl IRExpBuildable for LAndExp {
                             create_new_block(program, my_ir_generator_info, "LAnd_if_block_end");
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
-                        let result_ptr =
-                            create_new_value(program, my_ir_generator_info).alloc(Type::get_i32());
+                        let result_ptr = create_new_local_value(program, my_ir_generator_info)
+                            .alloc(Type::get_i32());
                         program
                             .func_mut(my_ir_generator_info.curr_func.unwrap())
                             .dfg_mut()
                             .set_value_name(result_ptr, Some(format!("@LAnd_result")));
-                        let zero = create_new_value(program, my_ir_generator_info).integer(0);
-                        let store_inst =
-                            create_new_value(program, my_ir_generator_info).store(zero, result_ptr);
+                        let zero = create_new_local_value(program, my_ir_generator_info).integer(0);
+                        let store_inst = create_new_local_value(program, my_ir_generator_info)
+                            .store(zero, result_ptr);
 
-                        let cond = create_new_value(program, my_ir_generator_info).binary(
+                        let cond = create_new_local_value(program, my_ir_generator_info).binary(
                             koopa::ir::BinaryOp::NotEq,
                             value1,
                             zero,
                         );
-                        let branch_inst = create_new_value(program, my_ir_generator_info)
+                        let branch_inst = create_new_local_value(program, my_ir_generator_info)
                             .branch(cond, block1, block_end);
-                        insert_instructions(
+                        insert_local_instructions(
                             program,
                             my_ir_generator_info,
                             [result_ptr, store_inst, cond, branch_inst],
@@ -279,15 +279,15 @@ impl IRExpBuildable for LAndExp {
                         )?;
                         let value2 = match result2 {
                             IRExpBuildResult::Const(i2) => {
-                                create_new_value(program, my_ir_generator_info).integer(i2)
+                                create_new_local_value(program, my_ir_generator_info).integer(i2)
                             }
                             IRExpBuildResult::Value(v2) => v2,
                         };
-                        let store_new_inst = create_new_value(program, my_ir_generator_info)
+                        let store_new_inst = create_new_local_value(program, my_ir_generator_info)
                             .store(value2, result_ptr);
                         let jmp_inst =
-                            create_new_value(program, my_ir_generator_info).jump(block_end);
-                        insert_instructions(
+                            create_new_local_value(program, my_ir_generator_info).jump(block_end);
+                        insert_local_instructions(
                             program,
                             my_ir_generator_info,
                             [store_new_inst, jmp_inst],
@@ -295,8 +295,8 @@ impl IRExpBuildable for LAndExp {
 
                         my_ir_generator_info.curr_block = Some(block_end);
                         let loaded_result =
-                            create_new_value(program, my_ir_generator_info).load(result_ptr);
-                        insert_instructions(program, my_ir_generator_info, [loaded_result]);
+                            create_new_local_value(program, my_ir_generator_info).load(result_ptr);
+                        insert_local_instructions(program, my_ir_generator_info, [loaded_result]);
                         Ok(IRExpBuildResult::Value(loaded_result))
                     }
 
@@ -469,7 +469,27 @@ impl IRExpBuildable for UnaryExp {
                 koopa::ir::BinaryOp::Eq,
             ),
             UnaryExp::FuncCall(func_id, params) => {
-                todo!()
+                let func = match my_ir_generator_info
+                    .function_table
+                    .get(&func_id.content)
+                    .cloned()
+                {
+                    Some(f) => Ok(f),
+                    None => Err(format!("Function {} not found!", &func_id.content)),
+                }?;
+                let mut real_params = vec![];
+                for param in params {
+                    real_params.push(match param.build(program, my_ir_generator_info)? {
+                        IRExpBuildResult::Const(int) => {
+                            create_new_local_value(program, my_ir_generator_info).integer(int)
+                        }
+                        IRExpBuildResult::Value(v) => v,
+                    })
+                }
+                let call_inst = create_new_local_value(program, my_ir_generator_info)
+                    .call(func.clone(), real_params);
+                insert_local_instructions(program, my_ir_generator_info, [call_inst]);
+                Ok(IRExpBuildResult::Value(call_inst))
             }
         }
     }
@@ -489,8 +509,9 @@ impl IRExpBuildable for PrimaryExp {
                     IRExpBuildResult::Const(_int) => Ok(result),
                     IRExpBuildResult::Value(ptr) => {
                         // If the PrimaryExp is a variable, then load it.
-                        let load_inst = create_new_value(program, my_ir_generator_info).load(ptr);
-                        insert_instructions(program, my_ir_generator_info, [load_inst]);
+                        let load_inst =
+                            create_new_local_value(program, my_ir_generator_info).load(ptr);
+                        insert_local_instructions(program, my_ir_generator_info, [load_inst]);
                         Ok(IRExpBuildResult::Value(load_inst))
                     }
                 }

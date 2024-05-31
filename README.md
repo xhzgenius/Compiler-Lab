@@ -405,6 +405,69 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 卧槽，大的要来了！
 
+##### 写自己的代码
+
+###### 搞定语法冲突
+
+Lalrpop搞不定文档里的语法，因为会产生 `BType` 和 `FuncType` 的规约-规约冲突。我直接简单粗暴把这俩合二为一了。
+
+然后费了一番功夫把语法解析搞定了。新增的语法也太多了。。。
+
+###### 全局变量
+
+在 `VarDecl build()` 的时候，判断一下当前是否处于函数内，分类处理即可。
+
+然后我惊喜地发现，`ConstDecl build()` 完全不用改就能处理全局常量。
+
+###### 函数定义
+
+首先要维护一个全局函数表。
+
+传参的时候，实参传进来的 `Value` 是具体的值，不是指针（左值）。
+
+在进入函数体的时候，首先要给每个形参 `alloc` 一下把它们变成左值，然后用 `store` 把实参赋值给形参，然后给新的符号表里面加上所有的形参。
+
+###### 函数调用
+
+修改 `UnaryExp` 加上对应内容即可。调用函数的时候比较简单。
+
+###### 库函数
+
+直接加入
+
+```
+decl @getint(): i32
+decl @getch(): i32
+decl @getarray(*i32): i32
+decl @putint(i32)
+decl @putch(i32)
+decl @putarray(i32, *i32)
+decl @starttime()
+decl @stoptime()
+```
+
+是不是就行了（？）
+
+还真是。更优雅的办法是在 `CompUnit build()` 的时候使用 `koopa::ir::FunctionData::new_decl()` 在开头添加函数声明。
+
+##### 注意
+
+有的时候源代码里没有 `return` 语句，要手动补上。
+
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv8 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv8 /root/compiler
+```
+
 
 ---
 

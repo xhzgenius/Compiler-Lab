@@ -5,8 +5,8 @@ use koopa::ir::{builder_traits::*, Program};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
-    create_new_block, create_new_value, insert_basic_blocks, insert_instructions, IRBuildResult,
-    IRBuildable, MyIRGeneratorInfo,
+    create_new_block, create_new_local_value, insert_basic_blocks, insert_local_instructions,
+    IRBuildResult, IRBuildable, MyIRGeneratorInfo,
 };
 
 impl IRBuildable for Stmt {
@@ -65,15 +65,15 @@ impl IRBuildable for BasicStmt {
                 let result2 = rhs_exp.build(program, my_ir_generator_info)?;
                 let rhs_value = match result2 {
                     IRExpBuildResult::Const(int) => {
-                        create_new_value(program, my_ir_generator_info).integer(int)
+                        create_new_local_value(program, my_ir_generator_info).integer(int)
                     }
                     IRExpBuildResult::Value(value) => value,
                 };
                 // Assign the RHS value into the new variable.
-                let store_inst =
-                    create_new_value(program, my_ir_generator_info).store(rhs_value, lval_ptr);
+                let store_inst = create_new_local_value(program, my_ir_generator_info)
+                    .store(rhs_value, lval_ptr);
                 // lval_ptr is an alloc instruction. It should not be added to instructions again.
-                insert_instructions(program, my_ir_generator_info, [store_inst]);
+                insert_local_instructions(program, my_ir_generator_info, [store_inst]);
                 Ok(IRBuildResult::OK)
             }
             BasicStmt::Exp(e) => {
@@ -84,11 +84,14 @@ impl IRBuildable for BasicStmt {
                     Ok(IRBuildResult::OK)
                 }
             }
-            BasicStmt::Block(block) => block.build(program, my_ir_generator_info),
+            BasicStmt::Block(block) => {
+                my_ir_generator_info.symbol_tables.add_new_table();
+                block.build(program, my_ir_generator_info)
+            }
             BasicStmt::IfStmt(cond, stmt1, possible_stmt2) => {
                 let cond_value = match cond.build(program, my_ir_generator_info)? {
                     IRExpBuildResult::Const(int) => {
-                        create_new_value(program, my_ir_generator_info).integer(int)
+                        create_new_local_value(program, my_ir_generator_info).integer(int)
                     }
                     IRExpBuildResult::Value(value) => value,
                 };
@@ -105,8 +108,8 @@ impl IRBuildable for BasicStmt {
                 match stmt1.build(program, my_ir_generator_info)? {
                     IRBuildResult::OK => {
                         let jmp_inst =
-                            create_new_value(program, my_ir_generator_info).jump(block_end);
-                        insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                            create_new_local_value(program, my_ir_generator_info).jump(block_end);
+                        insert_local_instructions(program, my_ir_generator_info, [jmp_inst]);
                     }
                     IRBuildResult::EARLYSTOPPING => {}
                 }
@@ -121,8 +124,13 @@ impl IRBuildable for BasicStmt {
                         match stmt2.build(program, my_ir_generator_info)? {
                             IRBuildResult::OK => {
                                 let jmp_inst =
-                                    create_new_value(program, my_ir_generator_info).jump(block_end);
-                                insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                                    create_new_local_value(program, my_ir_generator_info)
+                                        .jump(block_end);
+                                insert_local_instructions(
+                                    program,
+                                    my_ir_generator_info,
+                                    [jmp_inst],
+                                );
                             }
                             IRBuildResult::EARLYSTOPPING => {}
                         }
@@ -130,10 +138,10 @@ impl IRBuildable for BasicStmt {
                     }
                     None => block_end,
                 };
-                let if_stmt = create_new_value(program, my_ir_generator_info)
+                let if_stmt = create_new_local_value(program, my_ir_generator_info)
                     .branch(cond_value, block1, jmp_block);
                 my_ir_generator_info.curr_block = Some(block_start);
-                insert_instructions(program, my_ir_generator_info, [if_stmt]);
+                insert_local_instructions(program, my_ir_generator_info, [if_stmt]);
 
                 // Continue with the ending block.
                 my_ir_generator_info.curr_block = Some(block_end);
@@ -155,20 +163,20 @@ impl IRBuildable for BasicStmt {
 
                 // Jump to while start.
                 let start_jmp_inst =
-                    create_new_value(program, my_ir_generator_info).jump(block_start);
-                insert_instructions(program, my_ir_generator_info, [start_jmp_inst]);
+                    create_new_local_value(program, my_ir_generator_info).jump(block_start);
+                insert_local_instructions(program, my_ir_generator_info, [start_jmp_inst]);
 
                 // Build while start.
                 my_ir_generator_info.curr_block = Some(block_start);
                 let cond_value = match cond.build(program, my_ir_generator_info)? {
                     IRExpBuildResult::Const(int) => {
-                        create_new_value(program, my_ir_generator_info).integer(int)
+                        create_new_local_value(program, my_ir_generator_info).integer(int)
                     }
                     IRExpBuildResult::Value(value) => value,
                 };
-                let branch_inst = create_new_value(program, my_ir_generator_info)
+                let branch_inst = create_new_local_value(program, my_ir_generator_info)
                     .branch(cond_value, block_body, block_end);
-                insert_instructions(program, my_ir_generator_info, [branch_inst]);
+                insert_local_instructions(program, my_ir_generator_info, [branch_inst]);
 
                 // Build while body.
                 my_ir_generator_info.curr_block = Some(block_body);
@@ -178,8 +186,8 @@ impl IRBuildable for BasicStmt {
                 match stmt.build(program, my_ir_generator_info)? {
                     IRBuildResult::OK => {
                         let jmp_inst =
-                            create_new_value(program, my_ir_generator_info).jump(block_start);
-                        insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                            create_new_local_value(program, my_ir_generator_info).jump(block_start);
+                        insert_local_instructions(program, my_ir_generator_info, [jmp_inst]);
                     }
                     IRBuildResult::EARLYSTOPPING => {}
                 }
@@ -194,8 +202,9 @@ impl IRBuildable for BasicStmt {
                     Some(block) => Ok(block.clone()),
                     None => Err("Incorrect break statement! "),
                 }?;
-                let jmp_inst = create_new_value(program, my_ir_generator_info).jump(tgt_block);
-                insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                let jmp_inst =
+                    create_new_local_value(program, my_ir_generator_info).jump(tgt_block);
+                insert_local_instructions(program, my_ir_generator_info, [jmp_inst]);
                 Ok(IRBuildResult::EARLYSTOPPING)
             }
             BasicStmt::ContinueStmt => {
@@ -203,8 +212,9 @@ impl IRBuildable for BasicStmt {
                     Some(block) => Ok(block.clone()),
                     None => Err("Incorrect continue statement! "),
                 }?;
-                let jmp_inst = create_new_value(program, my_ir_generator_info).jump(tgt_block);
-                insert_instructions(program, my_ir_generator_info, [jmp_inst]);
+                let jmp_inst =
+                    create_new_local_value(program, my_ir_generator_info).jump(tgt_block);
+                insert_local_instructions(program, my_ir_generator_info, [jmp_inst]);
                 Ok(IRBuildResult::EARLYSTOPPING)
             }
             BasicStmt::ReturnStmt(returned_exp) => {
@@ -213,15 +223,16 @@ impl IRBuildable for BasicStmt {
                         let result = exp.build(program, my_ir_generator_info)?; // Build the returned Exp into curr_value.
                         match result {
                             IRExpBuildResult::Const(int) => {
-                                create_new_value(program, my_ir_generator_info).integer(int)
+                                create_new_local_value(program, my_ir_generator_info).integer(int)
                             }
                             IRExpBuildResult::Value(value) => value,
                         }
                     }),
                     None => None,
                 };
-                let return_stmt = create_new_value(program, my_ir_generator_info).ret(return_value);
-                insert_instructions(program, my_ir_generator_info, [return_stmt]);
+                let return_stmt =
+                    create_new_local_value(program, my_ir_generator_info).ret(return_value);
+                insert_local_instructions(program, my_ir_generator_info, [return_stmt]);
                 Ok(IRBuildResult::EARLYSTOPPING)
             }
         }

@@ -5,8 +5,8 @@ use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
-    create_new_value, insert_instructions, IRBuildResult, IRBuildable, MyIRGeneratorInfo,
-    SymbolTableEntry,
+    create_new_local_value, insert_local_instructions, IRBuildResult, IRBuildable,
+    MyIRGeneratorInfo, SymbolTableEntry,
 };
 
 impl IRBuildable for FuncDef {
@@ -16,23 +16,77 @@ impl IRBuildable for FuncDef {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         let FuncDef::Default(return_type, func_id, params, block) = self;
+        // Tell Koopa IR its return type and params.
         let return_type = Type::get(return_type.content.clone());
+        let mut koopa_ir_params = Vec::<(Option<String>, Type)>::new();
+        for FuncFParam::Default(btype, ident) in params {
+            koopa_ir_params.push((
+                Some(format!("%{}_param", &ident.content)),
+                Type::get(btype.content.clone()),
+            ));
+        }
         let func = program.new_func(FunctionData::with_param_names(
             format!("@{}", func_id.content),
-            vec![],
+            koopa_ir_params,
             return_type,
         ));
+
         // Insert the function name into symbol table.
-        // TODO: Maybe we should use another symbol table for functions.
+        my_ir_generator_info
+            .function_table
+            .insert(func_id.content.clone(), func);
+
+        /* Create a new BasicBlock and:
+           - Allocate form params;
+           - Insert form params into symbol table;
+           - Assign real params to form params.
+        */
         let func_data = program.func_mut(func);
-        let new_block = func_data
-            .dfg_mut()
-            .new_bb()
-            .basic_block(None);
+        let new_block = func_data.dfg_mut().new_bb().basic_block(None);
         func_data.layout_mut().bbs_mut().extend([new_block]);
         my_ir_generator_info.curr_block = Some(new_block);
         my_ir_generator_info.curr_func = Some(func);
-        block.build(program, my_ir_generator_info)
+
+        my_ir_generator_info.symbol_tables.add_new_table();
+        for idx in 0..program
+            .func(my_ir_generator_info.curr_func.unwrap())
+            .params()
+            .len()
+        {
+            let FuncFParam::Default(btype, ident) = &params[idx];
+            let real_param = program
+                .func(my_ir_generator_info.curr_func.unwrap())
+                .params()[idx];
+            // Allocate form params.
+            let form_param = create_new_local_value(program, my_ir_generator_info)
+                .alloc(Type::get(btype.content.clone()));
+            program.func_mut(func).dfg_mut().set_value_name(
+                form_param,
+                Some(format!(
+                    "@{}_{}",
+                    ident.content,
+                    my_ir_generator_info.symbol_tables.curr_depth()
+                )),
+            );
+            // Insert form params into symbol table.
+            my_ir_generator_info.symbol_tables.insert(
+                ident.content.clone(),
+                SymbolTableEntry::Variable(btype.content.clone(), form_param),
+            );
+            // Assign real params to form params.
+            let assign_inst =
+                create_new_local_value(program, my_ir_generator_info).store(real_param, form_param);
+            insert_local_instructions(program, my_ir_generator_info, [form_param, assign_inst]);
+        }
+        match block.build(program, my_ir_generator_info)? {
+            IRBuildResult::OK => {
+                // No return instruction. Add a return instruction.
+                let return_inst = create_new_local_value(program, my_ir_generator_info).ret(None);
+                insert_local_instructions(program, my_ir_generator_info, [return_inst]);
+            }
+            IRBuildResult::EARLYSTOPPING => {}
+        }
+        Ok(IRBuildResult::OK)
     }
 }
 
@@ -44,7 +98,6 @@ impl IRBuildable for Block {
     ) -> Result<IRBuildResult, String> {
         let Block::Default(stmts) = self;
         let mut block_result = IRBuildResult::OK;
-        my_ir_generator_info.symbol_tables.add_new_table();
         for stmt in stmts {
             let result = stmt.build(program, my_ir_generator_info)?;
             // Ignore everything after the return statement.
@@ -136,42 +189,75 @@ impl IRBuildable for VarDecl {
     ) -> Result<IRBuildResult, String> {
         let VarDecl::Default(btype, var_defs) = self;
         let var_type = &btype.content;
+
         for var_def in var_defs {
             let VarDef::Default(ident, possible_rhs) = var_def;
+
             // Allocate the new variable and get its Koopa IR Value.
-            let var_ptr =
-                create_new_value(program, my_ir_generator_info).alloc(Type::get(var_type.clone()));
-            program
-                .func_mut(my_ir_generator_info.curr_func.unwrap())
-                .dfg_mut()
-                .set_value_name(
-                    var_ptr,
-                    Some(format!(
-                        "@{}_{}",
-                        ident.content,
-                        my_ir_generator_info.symbol_tables.curr_depth()
-                    )),
-                );
-            // Insert the "alloc" instruction.
-            insert_instructions(program, my_ir_generator_info, [var_ptr]);
-            if let Some(rhs) = possible_rhs {
-                // Build RHS value (if exists).
-                let result = rhs.build(program, my_ir_generator_info)?;
-                let rhs_value = match result {
-                    IRExpBuildResult::Const(int) => {
-                        create_new_value(program, my_ir_generator_info).integer(int)
+            let final_var_ptr = match my_ir_generator_info.curr_func {
+                // If it's local:
+                Some(func) => {
+                    let var_ptr = create_new_local_value(program, my_ir_generator_info)
+                        .alloc(Type::get(var_type.clone()));
+                    program.func_mut(func).dfg_mut().set_value_name(
+                        var_ptr,
+                        Some(format!(
+                            "@{}_{}",
+                            ident.content,
+                            my_ir_generator_info.symbol_tables.curr_depth()
+                        )),
+                    );
+                    // Insert the "alloc" instruction.
+                    insert_local_instructions(program, my_ir_generator_info, [var_ptr]);
+                    if let Some(rhs) = possible_rhs {
+                        // Build RHS value (if exists).
+                        let result = rhs.build(program, my_ir_generator_info)?;
+                        let rhs_value = match result {
+                            IRExpBuildResult::Const(int) => {
+                                create_new_local_value(program, my_ir_generator_info).integer(int)
+                            }
+                            IRExpBuildResult::Value(value) => value,
+                        };
+                        // Assign the RHS value into the new variable.
+                        let store_inst = create_new_local_value(program, my_ir_generator_info)
+                            .store(rhs_value, var_ptr);
+                        insert_local_instructions(program, my_ir_generator_info, [store_inst]);
                     }
-                    IRExpBuildResult::Value(value) => value,
-                };
-                // Assign the RHS value into the new variable.
-                let store_inst =
-                    create_new_value(program, my_ir_generator_info).store(rhs_value, var_ptr);
-                insert_instructions(program, my_ir_generator_info, [store_inst]);
-            }
+                    var_ptr
+                }
+                // Or if it's global:
+                None => {
+                    let var_ptr = match possible_rhs {
+                        Some(rhs) => match rhs.build(program, my_ir_generator_info)? {
+                            IRExpBuildResult::Const(int) => {
+                                let int_init = program.new_value().integer(int);
+                                program.new_value().global_alloc(int_init)
+                            }
+                            IRExpBuildResult::Value(val) => program.new_value().global_alloc(val),
+                        },
+                        None => {
+                            let zero_init =
+                                program.new_value().zero_init(Type::get(var_type.clone()));
+                            program.new_value().global_alloc(zero_init)
+                        }
+                    };
+                    program.set_value_name(
+                        var_ptr,
+                        Some(format!(
+                            "@{}_{}",
+                            ident.content,
+                            my_ir_generator_info.symbol_tables.curr_depth()
+                        )),
+                    );
+                    // Insert the "global alloc" instruction. (Maybe no need?)
+                    var_ptr
+                }
+            };
+
             // Add an entry in the symbol table.
             my_ir_generator_info.symbol_tables.insert(
                 ident.content.clone(),
-                SymbolTableEntry::Variable(var_type.clone(), var_ptr),
+                SymbolTableEntry::Variable(var_type.clone(), final_var_ptr),
             );
         }
         Ok(IRBuildResult::OK)
