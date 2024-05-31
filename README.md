@@ -379,6 +379,14 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 新增的 while 语句只需要在 `BasicStmt` 中一起处理。
 
+###### 具体实现
+
+和 if 很像，也是创建三个 `BasicBlock` 。需要手动维护两个栈，记录当前如果 `break` 或者 `continue` 的话会跳转到哪个基本块。
+
+##### 注意
+
+如果在 `while` 的内部已经确定了会 `break` 或者 `continue` ，那么就不要在基本块末尾加上额外的跳转语句，要不然 Koopa IR 会报错。
+
 ##### 本地测试
 
 测试 Koopa IR:
