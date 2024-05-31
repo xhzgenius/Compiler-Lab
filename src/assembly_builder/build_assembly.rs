@@ -2,7 +2,7 @@
 
 use std::vec;
 
-use super::{MyAssemblyGeneratorInfo, REGISTER_NAMES};
+use super::{FuncValueTable, REGISTER_NAMES};
 use koopa::ir::{FunctionData, Program, Value};
 
 pub trait AssemblyBuildable {
@@ -21,43 +21,6 @@ impl AssemblyBuildable for Program {
             function_codes.extend(self.func(func).build()?);
         }
         Ok(function_codes)
-    }
-}
-
-/// Given a value, find which register it should use. Also returns the loading instruction code(s).
-fn get_reg(
-    fd: &FunctionData,
-    value: Value,
-    my_agi: &mut MyAssemblyGeneratorInfo,
-) -> Result<(usize, Vec<String>), String> {
-    match fd.dfg().value(value).kind() {
-        koopa::ir::ValueKind::Integer(int) => {
-            // Allocate a new register for the Integer.
-            // I don't want to use assembly codes like addi because I am lazy.
-            if int.value() == 0 {
-                Ok((0, vec![])) // Register x0(id=0) is always 0.
-            } else {
-                // Allocate a new register for the constant integer.
-                let reg = my_agi.allocate_register(value)?;
-                Ok((
-                    reg,
-                    vec![format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value())],
-                ))
-            }
-        }
-        _ => {
-            // Use the register allocated for this expression or left value.
-            // A register should be allocated.
-            // let reg = my_agi.find_using_register(value).expect(
-            //     format!(
-            //         "No register for expression. This should not happen. \n{:?}{:?}",
-            //         fd.dfg().value(value),
-            //         my_agi
-            //     )
-            //     .as_str(),
-            // );
-            Ok((my_agi.find_using_register(value)?, vec![]))
-        }
     }
 }
 
@@ -196,7 +159,7 @@ impl AssemblyBuildable for FunctionData {
         prologue_codes.push(format!("{}:", &self.name()[1..]));
 
         // Clear register usages when entering the function.
-        let mut my_agi = MyAssemblyGeneratorInfo::new();
+        let mut my_table = FuncValueTable::new();
 
         // In my compiler, every defined local variable (like "@y = alloc i32") has its place in memory.
         // Temporary values are stored in registers.
@@ -208,16 +171,11 @@ impl AssemblyBuildable for FunctionData {
         for (&_block, node) in self.layout().bbs() {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                if let koopa::ir::ValueKind::Alloc(_) = value_data.kind() {
-                    let var_name = value_data
-                        .name()
-                        .clone()
-                        .expect("Local variable has no name. Should not happen. ");
-                    my_agi
-                        .local_var_location_in_stack
-                        .insert(var_name, local_var_size);
-                    local_var_size += value_data.ty().size();
+                if !value_data.kind().is_local_inst() {
+                    continue;
                 }
+                my_table.value_location.insert(value, local_var_size);
+                local_var_size += value_data.ty().size();
             }
         }
         local_var_size = (local_var_size + 15) / 16 * 16;
@@ -233,6 +191,7 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be saved. )
 
         let mut body_codes = vec![];
+        body_codes.push(format!("\n{}_body:", &self.name()[1..]));
 
         for (&block, node) in self.layout().bbs() {
             // At the beginning of the BasicBlock, declare its name.
@@ -258,22 +217,26 @@ impl AssemblyBuildable for FunctionData {
                         // Does it have a return value?
                         match return_inst.value() {
                             Some(return_value) => {
-                                let return_value_data = self.dfg().value(return_value);
-                                // Return value kind:
-                                match return_value_data.kind() {
-                                    // Integer return value
-                                    koopa::ir::ValueKind::Integer(int) => {
-                                        body_codes.push(format!("  li\ta0, {}", int.value()));
-                                    }
-                                    // Other return values (result of binary expressions or left values)
-                                    _ => {
-                                        body_codes.push(format!(
-                                            "  mv\ta0, {}",
-                                            REGISTER_NAMES
-                                                [my_agi.find_using_register(return_value)?]
-                                        ));
-                                    }
-                                }
+                                // let return_value_data = self.dfg().value(return_value);
+                                // // Return value kind:
+                                // match return_value_data.kind() {
+                                //     // Integer return value
+                                //     koopa::ir::ValueKind::Integer(int) => {
+                                //         body_codes.push(format!("  li\ta0, {}", int.value()));
+                                //     }
+                                //     // Other return values (result of binary expressions or left values)
+                                //     _ => {
+                                //         let (reg, codes) =
+                                //             my_table.want_to_visit_value(value, self, true);
+                                //         body_codes.extend(codes);
+                                //         body_codes
+                                //             .push(format!("  mv\ta0, {}", REGISTER_NAMES[reg]));
+                                //     }
+                                // }
+                                let (reg, codes) =
+                                    my_table.want_to_visit_value(return_value, self, true);
+                                body_codes.extend(codes);
+                                body_codes.push(format!("  mv\ta0, {}", REGISTER_NAMES[reg]));
                             }
                             None => {}
                         }
@@ -283,22 +246,23 @@ impl AssemblyBuildable for FunctionData {
 
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
-                        let (reg1, codes1) = get_reg(self, binary.lhs(), &mut my_agi)?;
-                        let (reg2, codes2) = get_reg(self, binary.rhs(), &mut my_agi)?;
+                        let (reg1, codes1) = my_table.want_to_visit_value(binary.lhs(), self, true);
+                        let (reg2, codes2) = my_table.want_to_visit_value(binary.rhs(), self, true);
                         body_codes.extend(codes1);
                         body_codes.extend(codes2);
-                        my_agi.free_register(reg1);
-                        my_agi.free_register(reg2);
+                        // my_table.free_register(reg1);
+                        // my_table.free_register(reg2);
                         // Allocate a register for result. It can overwrite lhs or rhs.
-                        let reg_ans = my_agi.allocate_register(value)?;
+                        let (reg_ans, codes) = my_table.want_to_visit_value(value, self, false);
 
+                        body_codes.extend(codes);
                         body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
 
                         // If the result is useless, free the register.
                         // 我真是他妈天才！但是只天才了一半
-                        if self.dfg().value(value).used_by().is_empty() {
-                            my_agi.free_register(reg_ans);
-                        }
+                        // if self.dfg().value(value).used_by().is_empty() {
+                        //     my_table.free_register(reg_ans);
+                        // }
                     }
 
                     // Alloc operation
@@ -306,31 +270,21 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        let (stored_reg, codes) = get_reg(self, store.value(), &mut my_agi)?;
+                        let (stored_reg, codes) =
+                            my_table.want_to_visit_value(store.value(), self, true);
                         body_codes.extend(codes);
-                        let local_var_name = self
-                            .dfg()
-                            .value(store.dest())
-                            .name()
-                            .clone()
-                            .expect("Store target has no name. Should not happen. ");
-                        let offset = *my_agi
-                            .local_var_location_in_stack
-                            .get(&local_var_name)
-                            .expect(
-                                format!(
-                                    "Can't find {} in stack. Should not happen. ",
-                                    &local_var_name
-                                )
+                        let offset = *my_table.value_location.get(&store.dest()).expect(
+                            format!("Can't find store.dest() in stack. Should not happen. ",)
                                 .as_str(),
-                            );
+                        );
                         if offset <= 2047 {
                             body_codes.push(format!(
                                 "  sw\t{}, {}(sp)",
                                 REGISTER_NAMES[stored_reg], offset
                             ));
                         } else {
-                            let tmp_reg = my_agi.allocate_register(value)?;
+                            let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
+                            body_codes.extend(tmp_reg_codes);
                             body_codes.push(format!(
                                 "  li\t{}, {}\n  sw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
@@ -338,37 +292,27 @@ impl AssemblyBuildable for FunctionData {
                                 REGISTER_NAMES[stored_reg],
                                 REGISTER_NAMES[tmp_reg]
                             ));
-                            my_agi.free_register(tmp_reg);
+                            // my_table.free_register(tmp_reg);
                         }
-                        my_agi.free_register(stored_reg);
+                        // my_table.free_register(stored_reg);
                     }
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        let loaded_reg = my_agi.allocate_register(value)?;
-                        let local_var_name = self
-                            .dfg()
-                            .value(load.src())
-                            .name()
-                            .clone()
-                            .expect("Load source has no name. Should not happen. ");
-                        let offset = *my_agi
-                            .local_var_location_in_stack
-                            .get(&local_var_name)
-                            .expect(
-                                format!(
-                                    "Can't find {} in stack. Should not happen. ",
-                                    &local_var_name
-                                )
+                        let (loaded_reg, codes) = my_table.want_to_visit_value(value, self, false);
+                        body_codes.extend(codes);
+                        let offset = *my_table.value_location.get(&load.src()).expect(
+                            format!("Can't find load.src() in stack. Should not happen. ",)
                                 .as_str(),
-                            );
+                        );
                         if offset <= 2047 {
                             body_codes.push(format!(
                                 "  lw\t{}, {}(sp)",
                                 REGISTER_NAMES[loaded_reg], offset
                             ));
                         } else {
-                            let tmp_reg = my_agi.allocate_register(value)?;
+                            let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
+                            body_codes.extend(tmp_reg_codes);
                             body_codes.push(format!(
                                 "  li\t{}, {}\n  lw\t{}, 0({})",
                                 REGISTER_NAMES[tmp_reg],
@@ -376,7 +320,7 @@ impl AssemblyBuildable for FunctionData {
                                 REGISTER_NAMES[loaded_reg],
                                 REGISTER_NAMES[tmp_reg]
                             ));
-                            my_agi.free_register(tmp_reg);
+                            // my_table.free_register(tmp_reg);
                         }
                     }
 
@@ -398,7 +342,8 @@ impl AssemblyBuildable for FunctionData {
 
                     // Branch operation
                     koopa::ir::ValueKind::Branch(branch) => {
-                        let (cond_reg, codes) = get_reg(self, branch.cond(), &mut my_agi)?;
+                        let (cond_reg, codes) =
+                            my_table.want_to_visit_value(branch.cond(), self, true);
                         body_codes.extend(codes);
                         body_codes.push(format!(
                             "  bnez\t{}, {}",
@@ -444,11 +389,12 @@ impl AssemblyBuildable for FunctionData {
         // Function epilogue: change the stack pointer.
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n{}_ret:", &self.name()[1..]));
-        if local_var_size <= 2047 {
-            epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
-        } else {
-            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
-        }
+
+        // if local_var_size <= 2047 {
+        //     epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
+        // } else {
+        //     epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
+        // }
 
         // Return
         epilogue_codes.push(format!("  ret"));
