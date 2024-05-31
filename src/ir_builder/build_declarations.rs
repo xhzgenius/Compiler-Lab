@@ -15,7 +15,7 @@ impl IRBuildable for FuncDef {
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
-        let FuncDef::Default(return_type, func_id, block) = self;
+        let FuncDef::Default(return_type, func_id, params, block) = self;
         let return_type = Type::get(return_type.content.clone());
         let func = program.new_func(FunctionData::with_param_names(
             format!("@{}", func_id.content),

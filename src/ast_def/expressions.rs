@@ -72,6 +72,7 @@ pub enum UnaryExp {
     PlusUnaryExp(Box<UnaryExp>),
     MinusUnaryExp(Box<UnaryExp>),
     NotUnaryExp(Box<UnaryExp>),
+    FuncCall(IDENT, Vec<Exp>),
 }
 
 #[derive(Debug)]

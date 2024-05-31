@@ -137,8 +137,10 @@ impl IRExpBuildable for LOrExp {
                                result = rhs!=0;
                            }
                         */
-                        let block1 = create_new_block(program, my_ir_generator_info, "LOr_if_block");
-                        let block_end = create_new_block(program, my_ir_generator_info, "LOr_if_block_end");
+                        let block1 =
+                            create_new_block(program, my_ir_generator_info, "LOr_if_block");
+                        let block_end =
+                            create_new_block(program, my_ir_generator_info, "LOr_if_block_end");
                         insert_basic_blocks(program, my_ir_generator_info, [block1, block_end]);
 
                         let result_ptr =
@@ -466,6 +468,9 @@ impl IRExpBuildable for UnaryExp {
                 my_ir_generator_info,
                 koopa::ir::BinaryOp::Eq,
             ),
+            UnaryExp::FuncCall(func_id, params) => {
+                todo!()
+            }
         }
     }
 }

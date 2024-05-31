@@ -16,7 +16,12 @@ match {
 
 // 定义 CompUnit, 其返回值类型为 String
 // parser 在解析完成后的行为是返回 FuncDef 的值
-pub CompUnit: CompUnit = <func_def: FuncDef> => CompUnit {func_def};
+pub CompUnit: CompUnit = <cs: (Unit)*> => CompUnit::Default(cs);
+
+pub Unit: Unit = {
+  <d: Decl> => Unit::Decl(d), 
+  <f: FuncDef> => Unit::FuncDef(f), 
+}
 
 // ======================================================
 // Declarations
@@ -24,8 +29,36 @@ pub CompUnit: CompUnit = <func_def: FuncDef> => CompUnit {func_def};
 
 // 同上, 不解释
 FuncDef: FuncDef = {
-  <return_type: FuncType> <func_id: IDENT> "(" ")" <block: Block> => {
-    FuncDef::Default(return_type, func_id, block)
+  <return_type: BType> <func_id: IDENT> "(" <params: (FuncFParams)?> ")" <block: Block> => {
+    let mut vec = Vec::<FuncFParam>::new();
+    if let Some(ps) = params {
+      vec.extend(ps);
+    }
+    FuncDef::Default(return_type, func_id, vec, block)
+  }
+}
+
+FuncFParams: Vec<FuncFParam> = {
+  <fp: FuncFParam> <fps: ("," <FuncFParam>)*> => {
+    let mut vec = Vec::<FuncFParam>::new();
+    vec.push(fp);
+    for ffp in fps {
+      vec.push(ffp);
+    }
+    vec
+  }
+}
+
+FuncFParam: FuncFParam = <b: BType> <i: IDENT> => FuncFParam::Default(b, i);
+
+FuncRParams: Vec<Exp> = {
+  <e: Exp> <es: ("," <Exp>)*> => {
+    let mut vec = Vec::<Exp>::new();
+    vec.push(e);
+    for ee in es {
+      vec.push(ee);
+    }
+    vec
   }
 }
 
@@ -154,6 +187,13 @@ UnaryExp: UnaryExp = {
   "+" <unary_exp: UnaryExp> => UnaryExp::PlusUnaryExp(Box::new(unary_exp)), 
   "-" <unary_exp: UnaryExp> => UnaryExp::MinusUnaryExp(Box::new(unary_exp)), 
   "!" <unary_exp: UnaryExp> => UnaryExp::NotUnaryExp(Box::new(unary_exp)), 
+  <i: IDENT> "(" <params: (FuncRParams)?> ")" => {
+    let mut vec = Vec::<Exp>::new();
+    if let Some(ps) = params {
+      vec.extend(ps);
+    }
+    UnaryExp::FuncCall(i, vec)
+  }
 }
 
 PrimaryExp: PrimaryExp = {
@@ -185,10 +225,12 @@ INTCONST: i32 = {
 // 关于尖括号到底代表什么, 请 RTFM
 IDENT: IDENT = r"[_a-zA-Z][_a-zA-Z0-9]*" => IDENT{content: <>.to_string()};
 
-FuncType: FuncType = {
-  "int" => FuncType{content: TypeKind::Int32}
-}
+// FuncType: FuncType = {
+//   "int" => FuncType{content: TypeKind::Int32}, 
+//   "void" => FuncType{content: TypeKind::Unit}, 
+// }
 
 BType: BType = {
-  "int" => BType{content: TypeKind::Int32}
+  "int" => BType{content: TypeKind::Int32}, 
+  "void" => BType{content: TypeKind::Unit}, 
 }

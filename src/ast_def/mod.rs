@@ -3,12 +3,15 @@
 //!
 //! Currently, AST is defined as follows:
 //!
-//! CompUnit  ::= FuncDef;
+//! CompUnit ::= {Unit};
+//! Unit     ::= Decl | FuncDef;
 //!
 //! ======================================================
 //! Declarations
 //! ======================================================
-//! FuncDef   ::= FuncType IDENT "(" ")" Block;
+//! FuncDef       ::= FuncType IDENT "(" [FuncFParams] ")" Block;
+//! FuncFParams   ::= FuncFParam {"," FuncFParam};
+//! FuncFParam    ::= BType IDENT;
 //!
 //! Block         ::= "{" {BlockItem} "}";
 //! BlockItem     ::= Decl | Stmt;
@@ -57,7 +60,9 @@
 //! AddExp      ::= MulExp | AddExp ("+" | "-") MulExp;
 //! MulExp      ::= UnaryExp | MulExp ("*" | "/" | "%") UnaryExp;
 //!
-//! UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp;
+//! UnaryExp    ::= PrimaryExp
+//!               | UnaryOp UnaryExp
+//!               | IDENT "(" [FuncRParams] ")";
 //! UnaryOp     ::= "+" | "-" | "!";
 //! PrimaryExp  ::= "(" Exp ")" | LVal | Number;
 //!
@@ -67,7 +72,7 @@
 //! ======================================================
 //! Symbols
 //! ======================================================
-//! FuncType  ::= "int";
+//! // FuncType  ::= "void" | "int"; (Currently removed to aviod lalrpop conflict. )
 //! BType     ::= "int";
 //!
 
@@ -78,6 +83,12 @@ pub mod symbols;
 use declarations::*;
 
 #[derive(Debug)]
-pub struct CompUnit {
-    pub func_def: FuncDef,
+pub enum CompUnit {
+    Default(Vec<Unit>),
+}
+
+#[derive(Debug)]
+pub enum Unit {
+    Decl(Decl),
+    FuncDef(FuncDef),
 }

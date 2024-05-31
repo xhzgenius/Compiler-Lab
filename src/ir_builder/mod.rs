@@ -28,12 +28,12 @@ pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
 
 #[derive(Debug)]
 pub struct MyIRGeneratorInfo {
-    curr_block: Option<BasicBlock>,          // Current block
+    curr_block: Option<BasicBlock>,       // Current block
     break_tgt_blocks: Vec<BasicBlock>,    // Target blocks of break statements
     continue_tgt_blocks: Vec<BasicBlock>, // Target blocks of continue statements
-    curr_func: Option<Function>,             // Current function
-    symbol_tables: SymbolTableStack,         // Symbol table: ident-(type, Value)
-    bb_cnt: usize,                           // Number of BasicBlocks
+    curr_func: Option<Function>,          // Current function
+    symbol_tables: SymbolTableStack,      // Symbol table: ident-(type, Value)
+    bb_cnt: usize,                        // Number of BasicBlocks
 }
 
 #[derive(Debug)]
@@ -101,7 +101,24 @@ impl IRBuildable for CompUnit {
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
-        self.func_def.build(program, my_ir_generator_info)
+        let CompUnit::Default(units) = self;
+        for unit in units {
+            unit.build(program, my_ir_generator_info)?;
+        }
+        Ok(IRBuildResult::OK)
+    }
+}
+
+impl IRBuildable for Unit {
+    fn build(
+        &self,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRBuildResult, String> {
+        match self {
+            Unit::Decl(d) => d.build(program, my_ir_generator_info),
+            Unit::FuncDef(f) => f.build(program, my_ir_generator_info),
+        }
     }
 }
 
@@ -110,10 +127,12 @@ fn create_new_value<'a>(
     program: &'a mut Program,
     my_ir_generator_info: &'a mut MyIRGeneratorInfo,
 ) -> koopa::ir::builder::LocalBuilder<'a> {
-    program
-        .func_mut(my_ir_generator_info.curr_func.unwrap())
-        .dfg_mut()
-        .new_value()
+    match my_ir_generator_info.curr_func {
+        Some(func) => program.func_mut(func).dfg_mut().new_value(),
+        None => {
+            todo!()
+        }
+    }
 }
 
 /// Helper function to build a new basic block.

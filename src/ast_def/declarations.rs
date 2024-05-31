@@ -1,13 +1,18 @@
 //! Definitions of the Abstract Syntax Tree (AST).
 //! This is the part of declarations.
 
-use super::statements::*;
 use super::expressions::*;
+use super::statements::*;
 use super::symbols::*;
 
 #[derive(Debug)]
 pub enum FuncDef {
-    Default(FuncType, IDENT, Block),
+    Default(BType, IDENT, Vec<FuncFParam>, Block),
+}
+
+#[derive(Debug)]
+pub enum FuncFParam {
+    Default(BType, IDENT),
 }
 
 #[derive(Debug)]

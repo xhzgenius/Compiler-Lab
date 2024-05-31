@@ -401,6 +401,9 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv7 /root/compiler
 ```
 
+#### Lv.8 函数和全局变量
+
+卧槽，大的要来了！
 
 
 ---
