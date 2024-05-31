@@ -17,7 +17,9 @@ impl AssemblyBuildable for Program {
         // Assembly code of functions
         let mut function_codes = vec![];
         for &func in self.func_layout() {
-            function_codes.extend(self.func(func).build()?);
+            if self.func(func).layout().bbs().len() > 0 {
+                function_codes.extend(self.func(func).build()?);
+            }
         }
         Ok(function_codes)
     }
