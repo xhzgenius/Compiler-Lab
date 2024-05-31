@@ -366,11 +366,11 @@ impl AssemblyBuildable for FunctionData {
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n{}_ret:", &self.name()[1..]));
 
-        // if local_var_size <= 2047 {
-        //     epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
-        // } else {
-        //     epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
-        // }
+        if local_var_size <= 2047 {
+            epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
+        } else {
+            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
+        }
 
         // Return
         epilogue_codes.push(format!("  ret"));

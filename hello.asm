@@ -57,4 +57,5 @@ bb5_LOr_if_block_end:
   j	main_ret
 
 main_ret:
+  addi	sp, sp, 80
   ret
