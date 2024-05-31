@@ -1,21 +1,45 @@
 fun @main(): i32 {
 %0:
   @a_1 = alloc i32
-  store 2, @a_1
+  store 12345, @a_1
   %1 = load @a_1
-  br %1, %bb1_if_block_1, %bb2_if_block_2
+  @LAnd_result = alloc i32
+  store 0, @LAnd_result
+  %2 = ne %1, 0
+  br %2, %bb0_LAnd_if_block_1, %bb1_LAnd_if_block_end
 
-%bb1_if_block_1:
-  %2 = load @a_1
-  %3 = add %2, 1
-  store %3, @a_1
-  jump %bb0_if_block_end
+%bb0_LAnd_if_block_1:
+  store 0, @LAnd_result
+  jump %bb1_LAnd_if_block_end
 
-%bb2_if_block_2:
-  store 0, @a_1
-  jump %bb0_if_block_end
+%bb1_LAnd_if_block_end:
+  %3 = load @LAnd_result
+  @LOr_result = alloc i32
+  store 1, @LOr_result
+  %4 = eq %3, 0
+  br %4, %bb2_LOr_if_block_1, %bb3_LOr_if_block_end
 
-%bb0_if_block_end:
-  %4 = load @a_1
-  ret %4
+%bb2_LOr_if_block_1:
+  %5 = load @a_1
+  %6 = ne 0, %5
+  store %6, @LOr_result
+  jump %bb3_LOr_if_block_end
+
+%bb3_LOr_if_block_end:
+  %7 = load @LOr_result
+  @LOr_result_0 = alloc i32
+  store 1, @LOr_result_0
+  %8 = eq %7, 0
+  br %8, %bb4_LOr_if_block_1, %bb5_LOr_if_block_end
+
+%bb4_LOr_if_block_1:
+  %9 = load @a_1
+  %10 = ne 0, %9
+  %11 = ne 0, %10
+  store %11, @LOr_result_0
+  jump %bb5_LOr_if_block_end
+
+%bb5_LOr_if_block_end:
+  %12 = load @LOr_result_0
+  ret %12
 }
