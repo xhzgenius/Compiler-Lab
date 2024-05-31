@@ -156,6 +156,15 @@ impl IRBuildable for BasicStmt {
 
                 Ok(IRBuildResult::OK)
             }
+            BasicStmt::WhileStmt(exp, stmt) => {
+                Ok(IRBuildResult::OK)
+            }
+            BasicStmt::BreakStmt => {
+                Ok(IRBuildResult::OK)
+            }
+            BasicStmt::ContinueStmt => {
+                Ok(IRBuildResult::OK)
+            }
             BasicStmt::ReturnStmt(returned_exp) => {
                 let return_value = match returned_exp {
                     Some(exp) => Some({

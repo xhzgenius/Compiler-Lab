@@ -87,15 +87,21 @@ UnmatchedStmt: UnmatchedStmt = {
     => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ums.default), Box::new(None))}, 
   "if" "(" <e: Exp> ")" <ms: MatchedStmt> "else" <ums: UnmatchedStmt> 
     => UnmatchedStmt{default: BasicStmt::IfStmt(e, Box::new(ms.default), Box::new(Some(ums.default)))}, 
+  "while" "(" <e: Exp> ")" <ums: UnmatchedStmt> 
+    => UnmatchedStmt{default: BasicStmt::WhileStmt(e, Box::new(ums.default))}, 
 }
 
 MatchedStmt: MatchedStmt =  {
   <l: LVal> "=" <e: Exp> ";" => MatchedStmt{default: BasicStmt::AssignStmt(l, e)}, 
-  <exp: (Exp)?> ";" => MatchedStmt{default: BasicStmt::Exp(exp)}, 
+  <e: (Exp)?> ";" => MatchedStmt{default: BasicStmt::Exp(e)}, 
   <b: Block> => MatchedStmt{default: BasicStmt::Block(b)}, 
-  "if" "(" <exp: Exp> ")" <s1: MatchedStmt> "else" <s2: MatchedStmt> 
-    => MatchedStmt{default: BasicStmt::IfStmt(exp, Box::new(s1.default), Box::new(Some(s2.default)))}, 
-  "return" <exp: (Exp)?> ";" => MatchedStmt{default: BasicStmt::ReturnStmt(exp)}, 
+  "if" "(" <e: Exp> ")" <s1: MatchedStmt> "else" <s2: MatchedStmt> 
+    => MatchedStmt{default: BasicStmt::IfStmt(e, Box::new(s1.default), Box::new(Some(s2.default)))}, 
+  "while" "(" <e: Exp> ")" <ms: MatchedStmt> 
+    => MatchedStmt{default: BasicStmt::WhileStmt(e, Box::new(ms.default))}, 
+  "break" ";" => MatchedStmt{default: BasicStmt::BreakStmt}, 
+  "continue" ";" => MatchedStmt{default: BasicStmt::ContinueStmt}, 
+  "return" <e: (Exp)?> ";" => MatchedStmt{default: BasicStmt::ReturnStmt(e)}, 
 }
 
 // ======================================================

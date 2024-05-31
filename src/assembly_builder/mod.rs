@@ -41,7 +41,7 @@ impl MyAssemblyGeneratorInfo {
     /// If all registers are being used, then kicks one and returns the kicked register and its former user (Value).
     /// Else returns the empty register and None.
     /// This function should not be called outside.
-    fn get_usable_register(&mut self) -> usize {
+    fn __get_usable_register(&mut self) -> usize {
         let mut now_min = std::i32::MAX;
         let mut choice: Option<usize> = None;
         for i in REGISTER_FOR_TEMP {
@@ -57,7 +57,7 @@ impl MyAssemblyGeneratorInfo {
         }
         let _choice = choice.unwrap();
         // Kick a value and store it to the stack. TODO.
-        todo!()
+        panic!("Not enough register! This probably should not happen. ")
     }
 
     /// Finds where this value is stored.
@@ -77,7 +77,7 @@ impl MyAssemblyGeneratorInfo {
     /// Allocates a register for a value.
     /// The register is automatically selected.
     fn allocate_register(&mut self, value: Value) -> usize {
-        let reg = self.get_usable_register();
+        let reg = self.__get_usable_register();
         self.register_user[reg] = Some(value);
         self.register_used_time[reg] = self.curr_time;
         reg

@@ -291,8 +291,9 @@ impl AssemblyBuildable for FunctionData {
                             }
                             None => {}
                         }
-                        // Jump to the return part. 
-                        writeln!(output_file, "  j\t{}_ret", &self.name()[1..]).expect("Write error. ");
+                        // Jump to the return part.
+                        writeln!(output_file, "  j\t{}_ret", &self.name()[1..])
+                            .expect("Write error. ");
                     }
 
                     // Binary operation
@@ -309,6 +310,11 @@ impl AssemblyBuildable for FunctionData {
                             binary_op_to_assembly(binary, reg_ans, reg1, reg2)
                         )
                         .expect("Write error. ");
+                        // If the result is useless, free the register.
+                        // 我真是他妈天才！
+                        if self.dfg().value(value).used_by().is_empty() {
+                            my_agi.free_register(reg_ans);
+                        }
                     }
 
                     // Alloc operation

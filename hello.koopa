@@ -1,15 +1,87 @@
 fun @main(): i32 {
 %0:
-  @a_1 = alloc i32
-  store 2, @a_1
-  %1 = load @a_1
-  %2 = ne 0, %1
-  br %2, %bb1_if_block_1, %bb0_if_block_end
-
-%bb1_if_block_1:
+  @x_1 = alloc i32
+  store 1, @x_1
+  @y_1 = alloc i32
+  store 2, @y_1
+  @z_1 = alloc i32
+  store 3, @z_1
+  %1 = load @x_1
+  %2 = load @y_1
+  %3 = add %1, %2
+  %4 = load @z_1
+  %5 = add %3, %4
+  %6 = load @x_1
+  %7 = add %5, %6
+  %8 = load @y_1
+  %9 = add %7, %8
+  %10 = load @z_1
+  %11 = add %9, %10
+  %12 = load @x_1
+  %13 = load @y_1
+  %14 = add %12, %13
+  %15 = load @z_1
+  %16 = add %14, %15
+  %17 = load @x_1
+  %18 = add %16, %17
+  %19 = load @y_1
+  %20 = add %18, %19
+  %21 = load @z_1
+  %22 = add %20, %21
+  %23 = load @x_1
+  %24 = load @y_1
+  %25 = add %23, %24
+  %26 = load @z_1
+  %27 = add %25, %26
+  %28 = load @x_1
+  %29 = add %27, %28
+  %30 = load @y_1
+  %31 = add %29, %30
+  %32 = load @z_1
+  %33 = add %31, %32
+  %34 = load @x_1
+  %35 = load @y_1
+  %36 = add %34, %35
+  %37 = load @z_1
+  %38 = add %36, %37
+  %39 = load @x_1
+  %40 = add %38, %39
+  %41 = load @y_1
+  %42 = add %40, %41
+  %43 = load @z_1
+  %44 = add %42, %43
+  %45 = load @x_1
+  %46 = load @y_1
+  %47 = add %45, %46
+  %48 = load @z_1
+  %49 = add %47, %48
+  %50 = load @x_1
+  %51 = add %49, %50
+  %52 = load @y_1
+  %53 = add %51, %52
+  %54 = load @z_1
+  %55 = add %53, %54
+  %56 = load @x_1
+  %57 = load @y_1
+  %58 = add %56, %57
+  %59 = load @z_1
+  %60 = add %58, %59
+  %61 = load @x_1
+  %62 = add %60, %61
+  %63 = load @y_1
+  %64 = add %62, %63
+  %65 = load @z_1
+  %66 = add %64, %65
+  %67 = load @x_1
+  %68 = load @y_1
+  %69 = add %67, %68
+  %70 = load @z_1
+  %71 = add %69, %70
+  %72 = load @x_1
+  %73 = add %71, %72
+  %74 = load @y_1
+  %75 = add %73, %74
+  %76 = load @z_1
+  %77 = add %75, %76
   ret 0
-
-%bb0_if_block_end:
-  %3 = load @a_1
-  ret %3
 }

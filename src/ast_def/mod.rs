@@ -26,15 +26,19 @@
 //! ======================================================
 //! Stmt ::= UnmatchedStmt
 //!        | MatchedStmt;
-//! 
+//!
 //! UnmatchedStmt ::= "if" "(" Exp ")" MatchedStmt ["else" UnmatchedStmt]
-//!                 | "if" "(" Exp ")" UnmatchedStmt;
-//! 
+//!                 | "if" "(" Exp ")" UnmatchedStmt
+//!                 | "while" "(" Exp ")" UnmatchedStmt;
+//!
 //! MatchedStmt ::= LVal "=" Exp ";"
-//!        | [Exp] ";"
-//!        | Block
-//!        | "if" "(" Exp ")" MatchedStmt "else" MatchedStmt
-//!        | "return" [Exp] ";";
+//!               | [Exp] ";"
+//!               | Block
+//!               | "if" "(" Exp ")" MatchedStmt "else" MatchedStmt
+//!               | "while" "(" Exp ")" MatchedStmt
+//!               | "break" ";"
+//!               | "continue" ";"
+//!               | "return" [Exp] ";";
 //!
 //! ======================================================
 //! Expressions
@@ -42,7 +46,7 @@
 //! ConstInitVal  ::= ConstExp;
 //! ConstExp      ::= Exp;
 //! InitVal       ::= Exp;
-//! 
+//!
 //! Exp         ::= LOrExp;
 //!
 //! LOrExp      ::= LAndExp | LOrExp "||" LAndExp;
@@ -55,7 +59,7 @@
 //!
 //! UnaryExp    ::= PrimaryExp | UnaryOp UnaryExp;
 //! UnaryOp     ::= "+" | "-" | "!";
-//! PrimaryExp    ::= "(" Exp ")" | LVal | Number;
+//! PrimaryExp  ::= "(" Exp ")" | LVal | Number;
 //!
 //! LVal        ::= IDENT;
 //! Number      ::= INTCONST;
@@ -65,11 +69,11 @@
 //! ======================================================
 //! FuncType  ::= "int";
 //! BType     ::= "int";
-//! 
+//!
 
 pub mod declarations;
-pub mod statements;
 pub mod expressions;
+pub mod statements;
 pub mod symbols;
 use declarations::*;
 

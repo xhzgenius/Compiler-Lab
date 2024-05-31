@@ -1,24 +1,3481 @@
   .text
   .global main
 main:
-  addi	sp, sp, -16
-  li	t0, 2
+  addi	sp, sp, -32
+  li	t0, 1
   sw	t0, 0(sp)
+  li	t0, 2
+  sw	t0, 8(sp)
+  li	t0, 3
+  sw	t0, 16(sp)
   lw	t0, 0(sp)
-  xor	t0, x0, t0
-  snez	t0, t0
-  bnez	t0, bb1_if_block_1
-  j	bb0_if_block_end
-
-bb1_if_block_1:
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t0, 0(sp)
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
+  lw	t1, 0(sp)
+  add	t0, t0, t1
+  lw	t1, 8(sp)
+  add	t0, t0, t1
+  lw	t1, 16(sp)
+  add	t0, t0, t1
   li	a0, 0
   j	main_ret
 
-bb0_if_block_end:
-  lw	t1, 0(sp)
-  mv	a0, t1
-  j	main_ret
-
 main_ret:
-  addi	sp, sp, 16
+  addi	sp, sp, 32
   ret

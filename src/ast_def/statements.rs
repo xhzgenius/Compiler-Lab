@@ -6,8 +6,8 @@ use super::expressions::*;
 
 #[derive(Debug)]
 pub enum Stmt {
-    UnmatchedStmt(UnmatchedStmt), 
-    MatchedStmt(MatchedStmt), 
+    UnmatchedStmt(UnmatchedStmt),
+    MatchedStmt(MatchedStmt),
 }
 
 #[derive(Debug)]
@@ -26,5 +26,8 @@ pub enum BasicStmt {
     Exp(Option<Exp>),
     Block(Block),
     IfStmt(Exp, Box<BasicStmt>, Box<Option<BasicStmt>>),
+    WhileStmt(Exp, Box<BasicStmt>),
+    BreakStmt,
+    ContinueStmt,
     ReturnStmt(Option<Exp>),
 }

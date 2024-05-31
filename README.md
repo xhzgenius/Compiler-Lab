@@ -312,6 +312,8 @@ if (lhs != 0) {
 
 ##### 注意
 
+###### 关于命名
+
 测试脚本不允许 Koopa IR 的变量名或者基本块名带有横杠，明明 Koopa IR 规范是允许的。
 
 于是我又把变量命名方法改掉了。
@@ -319,6 +321,10 @@ if (lhs != 0) {
 目前我的所有 symbol 命名规范如下：
 
 对于变量名，其命名为 `{原始变量名}_{Block深度}`；对于基本块名，如果是手动创建的基本块，其命名为 `bb{基本块计数}_{原始基本块名}`，因为生成汇编代码的时候不能有相同的 label 名；每个函数返回的部分都有一个 label，名称为 `{函数名}_ret`，函数中的所有 `ret` 语句都会跳转到此处。
+
+###### 关于测试样例
+
+有些测试样例规模很大，于是我就爆寄存器了。。。而且在线平台不给错误详细信息，所以一直查不出原因。。。
 
 ##### 本地测试
 
@@ -333,5 +339,31 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv6 /root/compiler
 ```
+
+---
+
+#### Lv.7 while 语句
+
+##### 写自己的代码
+
+新增语法：
+
+```
+//! UnmatchedStmt ::= ...
+//!                 | "while" "(" Exp ")" UnmatchedStmt;
+//!
+//! MatchedStmt ::= ...
+//!               | "while" "(" Exp ")" MatchedStmt
+//!               | "break" ";"
+//!               | "continue" ";"
+//!               | ...
+```
+
+为了避免 if else 语句带来的二义性，这里也要把 `MatchedStmt` 和 `UnmatchedStmt` 分开写。
+
+新增的 while 语句只需要在 `BasicStmt` 中一起处理。
+
+
+---
 
 —END—
