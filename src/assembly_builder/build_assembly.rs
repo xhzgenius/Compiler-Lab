@@ -465,10 +465,11 @@ impl AssemblyBuildable for FunctionData {
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
         // Store back all the global variables in registers. 
+        epilogue_codes.push(format!("# Save global variables."));
         for i in 0..REGISTER_NAMES.len() {
             if let Some(value) = my_table.register_user[i] {
                 if value.is_global() {
-                    my_table.save_register(i);
+                    epilogue_codes.extend(my_table.save_register(i));
                 }
             }
         }

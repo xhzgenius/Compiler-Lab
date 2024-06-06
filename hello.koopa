@@ -16,18 +16,17 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @add(%y_param: i32) {
+fun @add(%y_param: i32): i32 {
 %0:
   @y = alloc i32
   store %y_param, @y
-  %1 = load @x
-  %2 = load @y
-  %3 = add %1, %2
-  store %3, @x
-  %4 = load @y
-  %5 = sub %4, 1
-  call @add(%5)
-  ret
+  %1 = load @y
+  %2 = sub %1, 1
+  %3 = call @add(%2)
+  %4 = load @x
+  %5 = add %3, %4
+  store %5, @x
+  ret 1
 }
 
 fun @main(): i32 {

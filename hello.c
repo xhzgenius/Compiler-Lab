@@ -1,8 +1,8 @@
 int x = 0;
 
-void add(int y) {
-    x = x+y;
-    add(y-1);
+int add(int y) {
+    x = add(y-1)+x;
+    return 1;
 }
 
 int main() {
