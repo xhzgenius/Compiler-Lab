@@ -83,14 +83,27 @@ impl FuncValueTable {
             .expect("Can't find kicked value in table. Seems impossible. ")
         {
             ValueLocation::Local(offset) => {
-                codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                let offset = offset.clone();
+                if offset <= 2047 {
+                    codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                } else {
+                    let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
+                    codes.extend(tmp_reg_codes);
+                    codes.push(format!(
+                        "  li\t{}, {}\n  sw\t{}, 0({})",
+                        REGISTER_NAMES[tmp_reg],
+                        offset,
+                        REGISTER_NAMES[reg],
+                        REGISTER_NAMES[tmp_reg]
+                    ));
+                }
             }
             ValueLocation::Global(symbol_name) => {
                 let symbol_name = symbol_name.clone();
                 let (tmp_reg, tmp_codes) = self.get_tmp_reg();
                 codes.extend(tmp_codes);
                 codes.push(format!(
-                    "  la\t{}, {}\n  sw\t{}, {}(sp)",
+                    "  la\t{}, {}\n  sw\t{}, 0({})",
                     REGISTER_NAMES[tmp_reg],
                     symbol_name,
                     REGISTER_NAMES[reg],
@@ -128,12 +141,16 @@ impl FuncValueTable {
     fn want_to_visit_value(
         &mut self,
         value: Value,
+        program: &Program,
         fd: &FunctionData,
         do_load: bool,
         use_certain_reg: Option<usize>,
     ) -> (usize, Vec<String>) {
-        // Value is a constant
-        if let koopa::ir::ValueKind::Integer(int) = fd.dfg().value(value).kind() {
+        let value_kind = match value.is_global() {
+            true => program.borrow_value(value).kind().clone(),
+            false => fd.dfg().value(value).kind().clone(),
+        };
+        if let koopa::ir::ValueKind::Integer(int) = value_kind {
             // Allocate a new register for the Integer.
             // I don't want to use assembly codes like addi because I am lazy.
             if int.value() == 0 {
@@ -185,14 +202,27 @@ impl FuncValueTable {
                 .expect("Can't find wanted-to-visit value in table. ")
             {
                 ValueLocation::Local(offset) => {
-                    codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset,));
+                    let offset = offset.clone();
+                    if offset <= 2047 {
+                        codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                    } else {
+                        let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
+                        codes.extend(tmp_reg_codes);
+                        codes.push(format!(
+                            "  li\t{}, {}\n  lw\t{}, 0({})",
+                            REGISTER_NAMES[tmp_reg],
+                            offset,
+                            REGISTER_NAMES[reg],
+                            REGISTER_NAMES[tmp_reg]
+                        ));
+                    }
                 }
                 ValueLocation::Global(symbol_name) => {
                     let symbol_name = symbol_name.clone();
                     let (tmp_reg, tmp_codes) = self.get_tmp_reg();
                     codes.extend(tmp_codes);
                     codes.push(format!(
-                        "  la\t{}, {}\n  lw\t{}, {}(sp)",
+                        "  la\t{}, {}\n  lw\t{}, 0({})",
                         REGISTER_NAMES[tmp_reg],
                         symbol_name,
                         REGISTER_NAMES[reg],

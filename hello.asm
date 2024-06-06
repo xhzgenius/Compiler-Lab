@@ -1,112 +1,66 @@
   .data
 x:
-  .zero 4
+  .word 0
 
   .text
-  .global half
-half:
-  addi	sp, sp, -112
-  sw	ra, 108(sp)
+  .global add
+add:
+  addi	sp, sp, -32
+  sw	ra, 28(sp)
 
-.half_body:
+.add_body:
+# Some("@y") Alloc(Alloc)
+# None Store(Store { value: Value(1073741824), dest: Value(1073741825) })
   sw	a0, 0(sp)
-  sw	a1, 8(sp)
-  sw	a2, 16(sp)
-  sw	a3, 24(sp)
-  sw	a4, 32(sp)
-  sw	a5, 40(sp)
-  sw	a6, 48(sp)
-  sw	a7, 56(sp)
-  lw	t0, 112(sp)
-  sw	t0, 64(sp)
-  lw	t1, 116(sp)
-  sw	t1, 72(sp)
-  lw	t2, 120(sp)
-  sw	t2, 80(sp)
-  w	t3, 80(sp)
-  li	t4, 2
-  div	t4, t3, t4
-  mv	a0, t4
-  j	.half_ret
-
-.half_ret:
-  lw	ra, 108(sp)
-  addi	sp, sp, 112
-  ret
-
-  .global f
-f:
-  addi	sp, sp, -16
-  sw	ra, 12(sp)
-
-.f_body:
+# None Load(Load { src: Value(2) })
   la	t1, x
-  lw	t0, t1(sp)
-  li	t1, 2
-  div	t1, t0, t1
-  mv	a0, t1
-  j	.f_ret
+  lw	t0, 0(t1)
+# None Load(Load { src: Value(1073741825) })
+  lw	t1, 0(sp)
+# None Binary(Binary { op: Add, lhs: Value(1073741827), rhs: Value(1073741828) })
+  add	t2, t0, t1
+# None Store(Store { value: Value(1073741829), dest: Value(2) })
+  la	t3, x
+  sw	t2, 0(t3)
+# None Load(Load { src: Value(1073741825) })
+  lw	t3, 0(sp)
+# None Binary(Binary { op: Sub, lhs: Value(1073741831), rhs: Value(1073741832) })
+  li	t4, 1
+  sub	t4, t3, t4
+# None Call(Call { callee: Function(9), args: [Value(1073741833)] })
+  sw	t0, 8(sp)
+  sw	t1, 12(sp)
+  sw	t2, 16(sp)
+  sw	t3, 20(sp)
+  sw	t4, 24(sp)
+  lw	a0, 24(sp)
+  call	add
+# None Return(Return { value: None })
+  j	.add_ret
 
-.f_ret:
-  lw	ra, 12(sp)
-  addi	sp, sp, 16
+.add_ret:
+  lw	ra, 28(sp)
+  addi	sp, sp, 32
   ret
 
   .global main
 main:
-  addi	sp, sp, -144
-  sw	ra, 140(sp)
+  addi	sp, sp, -16
+  sw	ra, 12(sp)
 
 .main_body:
-  li	t0, -1
-  sw	t0, 12(sp)
-  li	t0, -2
-  sw	t0, 20(sp)
-  li	t0, -3
-  sw	t0, 28(sp)
-  li	t0, -4
-  sw	t0, 36(sp)
-  li	t0, -5
-  sw	t0, 44(sp)
-  li	t0, -6
-  sw	t0, 52(sp)
-  li	t0, -7
-  sw	t0, 60(sp)
-  li	t0, -8
-  sw	t0, 68(sp)
-  li	t0, -9
-  sw	t0, 76(sp)
-  li	t0, -10
-  sw	t0, 84(sp)
-  w	t0, 84(sp)
-  sw	t0, 100(sp)
-  li	a0, 0
-  li	a1, 1
-  li	a2, 2
-  li	a3, 3
-  li	a4, 4
-  li	a5, 5
-  li	a6, 6
-  li	a7, 7
-  li	t0, 8
-  sw	t0, 0(sp)
-  li	t0, 9
-  sw	t0, 4(sp)
-  lw	t0, 100(sp)
-  sw	t0, 8(sp)
-  call	half
-  sw	a0, 92(sp)
-  w	t1, 84(sp)
-  la	t3, x
-  lw	t2, t3(sp)
-  add	t3, t1, t2
-  sw	t3, 108(sp)
-  w	t4, 92(sp)
-  mv	a0, t4
+# None Call(Call { callee: Function(9), args: [Value(1073741836)] })
+  li	a0, 10
+  call	add
+# None Load(Load { src: Value(2) })
+  la	t1, x
+  lw	t0, 0(t1)
+# None Return(Return { value: Some(Value(1073741838)) })
+  mv	a0, t0
   j	.main_ret
 
 .main_ret:
-  lw	ra, 140(sp)
-  addi	sp, sp, 144
+  lw	ra, 12(sp)
+  addi	sp, sp, 16
   ret
 

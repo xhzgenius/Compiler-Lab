@@ -230,7 +230,7 @@ impl AssemblyBuildable for FunctionData {
         }
         let stack_frame_size = (local_var_size + max_call_arg_size + reg_ra_size + 15) / 16 * 16;
 
-        // Function prologue: change the stack pointer.
+        // Change the stack pointer.
         if stack_frame_size <= 2048 {
             prologue_codes.push(format!("  addi\tsp, sp, -{}", stack_frame_size));
         } else {
@@ -286,8 +286,9 @@ impl AssemblyBuildable for FunctionData {
             // Generate instructions.
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
+                body_codes.push(format!("# {:?} {:?}", value_data.name(), value_data.kind()));
                 match value_data.kind() {
-                    // DO different things based on instruction kind.
+                    // Do different things based on instruction kind.
 
                     // Return instruction
                     koopa::ir::ValueKind::Return(return_inst) => {
@@ -296,6 +297,7 @@ impl AssemblyBuildable for FunctionData {
                             Some(return_value) => {
                                 let (reg, codes) = my_table.want_to_visit_value(
                                     return_value,
+                                    program,
                                     self,
                                     true,
                                     Some(REG_A0),
@@ -312,13 +314,13 @@ impl AssemblyBuildable for FunctionData {
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
                         let (reg1, codes1) =
-                            my_table.want_to_visit_value(binary.lhs(), self, true, None);
+                            my_table.want_to_visit_value(binary.lhs(), program, self, true, None);
                         let (reg2, codes2) =
-                            my_table.want_to_visit_value(binary.rhs(), self, true, None);
+                            my_table.want_to_visit_value(binary.rhs(), program, self, true, None);
                         body_codes.extend(codes1);
                         body_codes.extend(codes2);
                         let (reg_ans, codes) =
-                            my_table.want_to_visit_value(value, self, false, None);
+                            my_table.want_to_visit_value(value, program, self, false, None);
                         body_codes.extend(codes);
                         body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
 
@@ -335,7 +337,7 @@ impl AssemblyBuildable for FunctionData {
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
                         let (stored_reg, codes) =
-                            my_table.want_to_visit_value(store.value(), self, true, None);
+                            my_table.want_to_visit_value(store.value(), program, self, true, None);
                         body_codes.extend(codes);
                         let location = my_table.value_location.get(&store.dest()).expect(
                             format!("Can't find store.dest() in stack. Should not happen. ",)
@@ -382,7 +384,7 @@ impl AssemblyBuildable for FunctionData {
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
                         let (loaded_reg, codes) =
-                            my_table.want_to_visit_value(value, self, false, None);
+                            my_table.want_to_visit_value(value, program, self, false, None);
                         body_codes.extend(codes);
                         let location = my_table.value_location.get(&load.src()).clone().expect(
                             format!("Can't find store.dest() in stack. Should not happen. ",)
@@ -442,7 +444,7 @@ impl AssemblyBuildable for FunctionData {
                     // Branch operation
                     koopa::ir::ValueKind::Branch(branch) => {
                         let (cond_reg, codes) =
-                            my_table.want_to_visit_value(branch.cond(), self, true, None);
+                            my_table.want_to_visit_value(branch.cond(), program, self, true, None);
                         body_codes.extend(codes);
                         body_codes.push(format!(
                             "  bnez\t{}, .{}",
@@ -481,6 +483,7 @@ impl AssemblyBuildable for FunctionData {
                         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), call.args().len()) {
                             let (reg, codes) = my_table.want_to_visit_value(
                                 call.args()[i],
+                                program,
                                 self,
                                 true,
                                 Some(REGISTER_FOR_ARGS[i]),
@@ -492,8 +495,13 @@ impl AssemblyBuildable for FunctionData {
                             body_codes.extend(codes);
                         }
                         for i in REGISTER_FOR_ARGS.len()..call.args().len() {
-                            let (reg, codes) =
-                                my_table.want_to_visit_value(call.args()[i], self, true, None);
+                            let (reg, codes) = my_table.want_to_visit_value(
+                                call.args()[i],
+                                program,
+                                self,
+                                true,
+                                None,
+                            );
                             body_codes.extend(codes);
                             let offset = (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE;
                             body_codes

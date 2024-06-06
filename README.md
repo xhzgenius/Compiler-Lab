@@ -480,6 +480,8 @@ decl @stoptime()
 
 有的时候源代码里没有 `return` 语句，要手动补上。
 
+目前所有的 `load` 和 `store` 指令全都是直接对内存操作的。将来得优化成 LRU cache 形式。
+
 ##### 本地测试
 
 测试 Koopa IR:
