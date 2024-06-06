@@ -2,7 +2,9 @@
 
 use std::vec;
 
-use super::{FuncValueTable, REGISTER_NAMES};
+use super::{
+    FuncValueTable, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES, REG_A0,
+};
 use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
 
 pub trait AssemblyBuildable {
@@ -158,11 +160,9 @@ fn binary_op_to_assembly(
     }
 }
 
-/**
- * Used to handle global variable declarations.
- * The ValueData's kind should be GlobalAlloc. Or it will panic.
- */
 impl AssemblyBuildable for ValueData {
+    /// Used to handle global variable declarations.
+    /// The ValueData's kind should be GlobalAlloc. Or it will panic.
     fn build(&self, program: &Program) -> Result<Vec<String>, String> {
         if let ValueKind::GlobalAlloc(global) = self.kind() {
             let mut codes = vec![];
@@ -201,26 +201,59 @@ impl AssemblyBuildable for FunctionData {
         // and temp values has its place in memory.
         // The registers work like a LRU cache.
 
-        let mut local_var_size = 0; // Bytes for storing all local variables.
-
+        let mut max_call_arg_size = 0; // Bytes for storing all call args.
+        let reg_ra_size = 4; // Bytes for storing register ra's value.
+        for (&_block, node) in self.layout().bbs() {
+            for &value in node.insts().keys() {
+                if let ValueKind::Call(call) = self.dfg().value(value).kind() {
+                    let mut arg_size = 0;
+                    if call.args().len() > REGISTER_FOR_ARGS.len() {
+                        for &_arg in &call.args()[REGISTER_FOR_ARGS.len()..] {
+                            arg_size += ARG_SIZE;
+                        }
+                    }
+                    max_call_arg_size = std::cmp::max(arg_size, max_call_arg_size);
+                }
+            }
+        }
+        let mut local_var_size: usize = 0; // Bytes for storing all local variables.
         for (&_block, node) in self.layout().bbs() {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                my_table.value_location.insert(value, local_var_size);
+                my_table
+                    .value_location
+                    .insert(value, local_var_size + max_call_arg_size);
                 local_var_size += value_data.ty().size();
             }
         }
-        local_var_size = (local_var_size + 15) / 16 * 16;
+        let stack_frame_size = (local_var_size + max_call_arg_size + reg_ra_size + 15) / 16 * 16;
 
         // Function prologue: change the stack pointer.
-        if local_var_size <= 2048 {
-            prologue_codes.push(format!("  addi\tsp, sp, -{}", local_var_size));
+        if stack_frame_size <= 2048 {
+            prologue_codes.push(format!("  addi\tsp, sp, -{}", stack_frame_size));
         } else {
-            prologue_codes.push(format!("  li\tt0, -{}\n  add\tsp, sp, t0", local_var_size));
+            prologue_codes.push(format!(
+                "  li\tt0, -{}\n  add\tsp, sp, t0",
+                stack_frame_size
+            ));
+        }
+
+        // Push every arg into the value table.
+        for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), self.params().len()) {
+            my_table.register_user[REGISTER_FOR_ARGS[i]] = Some(self.params()[i]);
+        }
+        for i in REGISTER_FOR_ARGS.len()..self.params().len() {
+            my_table.value_location.insert(
+                self.params()[i],
+                (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE + stack_frame_size,
+            );
         }
 
         // Save callee-saved registers.
         // (Currently no callee-saved registers need to be saved. )
+
+        // Save registar ra. (Return address)
+        prologue_codes.push(format!("  sw\tra, {}(sp)", stack_frame_size - reg_ra_size));
 
         let mut body_codes = vec![];
         body_codes.push(format!("\n.{}_body:", &self.name()[1..]));
@@ -251,10 +284,14 @@ impl AssemblyBuildable for FunctionData {
                         // Does it have a return value?
                         match return_inst.value() {
                             Some(return_value) => {
-                                let (reg, codes) =
-                                    my_table.want_to_visit_value(return_value, self, true);
+                                let (reg, codes) = my_table.want_to_visit_value(
+                                    return_value,
+                                    self,
+                                    true,
+                                    Some(REG_A0),
+                                );
+                                assert_eq!(reg, REG_A0, "WTF??! I asked to load into reg a0!!!");
                                 body_codes.extend(codes);
-                                body_codes.push(format!("  mv\ta0, {}", REGISTER_NAMES[reg]));
                             }
                             None => {}
                         }
@@ -264,11 +301,14 @@ impl AssemblyBuildable for FunctionData {
 
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
-                        let (reg1, codes1) = my_table.want_to_visit_value(binary.lhs(), self, true);
-                        let (reg2, codes2) = my_table.want_to_visit_value(binary.rhs(), self, true);
+                        let (reg1, codes1) =
+                            my_table.want_to_visit_value(binary.lhs(), self, true, None);
+                        let (reg2, codes2) =
+                            my_table.want_to_visit_value(binary.rhs(), self, true, None);
                         body_codes.extend(codes1);
                         body_codes.extend(codes2);
-                        let (reg_ans, codes) = my_table.want_to_visit_value(value, self, false);
+                        let (reg_ans, codes) =
+                            my_table.want_to_visit_value(value, self, false, None);
                         body_codes.extend(codes);
                         body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
 
@@ -285,7 +325,7 @@ impl AssemblyBuildable for FunctionData {
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
                         let (stored_reg, codes) =
-                            my_table.want_to_visit_value(store.value(), self, true);
+                            my_table.want_to_visit_value(store.value(), self, true, None);
                         body_codes.extend(codes);
                         let offset = *my_table.value_location.get(&store.dest()).expect(
                             format!("Can't find store.dest() in stack. Should not happen. ",)
@@ -313,7 +353,8 @@ impl AssemblyBuildable for FunctionData {
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        let (loaded_reg, codes) = my_table.want_to_visit_value(value, self, false);
+                        let (loaded_reg, codes) =
+                            my_table.want_to_visit_value(value, self, false, None);
                         body_codes.extend(codes);
                         match load.src().is_global() {
                             true => {
@@ -368,7 +409,7 @@ impl AssemblyBuildable for FunctionData {
                     // Branch operation
                     koopa::ir::ValueKind::Branch(branch) => {
                         let (cond_reg, codes) =
-                            my_table.want_to_visit_value(branch.cond(), self, true);
+                            my_table.want_to_visit_value(branch.cond(), self, true, None);
                         body_codes.extend(codes);
                         body_codes.push(format!(
                             "  bnez\t{}, .{}",
@@ -397,6 +438,47 @@ impl AssemblyBuildable for FunctionData {
                         ));
                     }
 
+                    koopa::ir::ValueKind::Call(call) => {
+                        // Save caller-saved registers.
+                        for reg in REGISTER_FOR_TEMP {
+                            body_codes.extend(my_table.save_register(reg));
+                        }
+
+                        // Push args into registers for args.
+                        for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), call.args().len()) {
+                            let (reg, codes) = my_table.want_to_visit_value(
+                                call.args()[i],
+                                self,
+                                true,
+                                Some(REGISTER_FOR_ARGS[i]),
+                            );
+                            assert_eq!(
+                                reg, REGISTER_FOR_ARGS[i],
+                                "WTF??! I asked to load into this reg!!!"
+                            );
+                            body_codes.extend(codes);
+                        }
+                        for i in REGISTER_FOR_ARGS.len()..call.args().len() {
+                            let (reg, codes) =
+                                my_table.want_to_visit_value(call.args()[i], self, true, None);
+                            body_codes.extend(codes);
+                            let offset = (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE;
+                            body_codes
+                                .push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                        }
+
+                        // Call the function.
+                        body_codes.push(format!(
+                            "  call\t{}",
+                            &program.func(call.callee()).name()[1..]
+                        ));
+
+                        // Now the returned value is in register a0.
+                        // Insert it into the register table.
+                        my_table.register_user[REG_A0] = Some(value);
+                        my_table.register_used_time[REG_A0] = my_table.curr_time;
+                    }
+
                     // Other instructions (TODO: Not implemented)
                     value_kind => {
                         return Err(format!(
@@ -408,17 +490,21 @@ impl AssemblyBuildable for FunctionData {
             }
         }
 
-        // Restore callee-saved registers.
-        // (Currently no callee-saved registers need to be restored. )
-
-        // Function epilogue: change the stack pointer.
+        // Function epilogue.
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
-        if local_var_size <= 2047 {
-            epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));
+        // Restore registar ra. (Return address)
+        epilogue_codes.push(format!("  lw\tra, {}(sp)", stack_frame_size - reg_ra_size));
+
+        // Restore callee-saved registers.
+        // (Currently no callee-saved registers need to be restored. )
+
+        // Restore stack pointer.
+        if stack_frame_size <= 2047 {
+            epilogue_codes.push(format!("  addi\tsp, sp, {}", stack_frame_size));
         } else {
-            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", local_var_size));
+            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", stack_frame_size));
         }
 
         // Return

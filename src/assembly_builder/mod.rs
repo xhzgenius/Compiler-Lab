@@ -22,7 +22,13 @@ const REGISTER_NAMES: [&str; 32] = [
     "t5", "x31",
 ];
 
-const REGISTER_FOR_TEMP: [usize; 15] = [5, 6, 7, 28, 29, 30, 31, 10, 11, 12, 13, 14, 15, 16, 17];
+const REGISTER_FOR_TEMP: [usize; 7] = [5, 6, 7, 28, 29, 30, 31];
+
+const REGISTER_FOR_ARGS: [usize; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
+
+const ARG_SIZE: usize = 4;
+
+const REG_A0: usize = 10;
 
 #[derive(Debug)]
 pub struct FuncValueTable {
@@ -43,7 +49,7 @@ impl FuncValueTable {
     }
 
     fn __is_value_in_register(&self, value: Value) -> Option<usize> {
-        for i in REGISTER_FOR_TEMP {
+        for i in 0..REGISTER_NAMES.len() {
             match self.register_user[i] {
                 Some(v) => {
                     if v == value {
@@ -54,6 +60,26 @@ impl FuncValueTable {
             }
         }
         None
+    }
+
+    /// Kick a value and store it to the stack.
+    fn save_register(&mut self, reg: usize) -> Vec<String> {
+        let kicked_value = match self.register_user[reg] {
+            Some(value) => value,
+            None => return vec![],
+        };
+        self.register_user[reg] = None;
+        self.register_used_time[reg] = 0;
+        let store_location = self
+            .value_location
+            .get(&kicked_value)
+            .expect("Can't find kicked value in table. Seems impossible. ");
+        let mut codes = vec![];
+        codes.push(format!(
+            "  sw\t{}, {}(sp)",
+            REGISTER_NAMES[reg], store_location
+        ));
+        codes
     }
 
     /// Finds a usable register.
@@ -76,20 +102,7 @@ impl FuncValueTable {
             }
         }
         let choice = possible_choice.unwrap();
-        // Kick a value and store it to the stack.
-        let kicked_value = self.register_user[choice].unwrap();
-        self.register_user[choice] = None;
-        self.register_used_time[choice] = 0;
-        let store_location = self
-            .value_location
-            .get(&kicked_value)
-            .expect("Can't find kicked value in table. Seems impossible. ");
-        let mut codes = vec![];
-        codes.push(format!(
-            "  sw\t{}, {}(sp)",
-            REGISTER_NAMES[choice], store_location
-        ));
-        (choice, codes)
+        (choice, self.save_register(choice))
     }
 
     /// Want to visit a value. Make it appear in a register.
@@ -98,26 +111,54 @@ impl FuncValueTable {
         value: Value,
         fd: &FunctionData,
         do_load: bool,
+        use_certain_reg: Option<usize>,
     ) -> (usize, Vec<String>) {
         // Value is a constant
         if let koopa::ir::ValueKind::Integer(int) = fd.dfg().value(value).kind() {
             // Allocate a new register for the Integer.
             // I don't want to use assembly codes like addi because I am lazy.
             if int.value() == 0 {
-                return (0, vec![]); // Register x0(id=0) is always 0.
+                return match use_certain_reg {
+                    Some(reg_dst) => (
+                        reg_dst,
+                        vec![format!("  li\t{}, 0", REGISTER_NAMES[reg_dst])],
+                    ),
+                    None => (0, vec![]), // Register x0(id=0) is always 0.
+                };
             } else {
                 // Allocate a new register for the constant integer.
-                let (reg, mut codes) = self.get_tmp_reg();
+                let (reg, mut codes) = match use_certain_reg {
+                    Some(reg_dst) => (reg_dst, vec![]),
+                    None => self.get_tmp_reg(),
+                };
                 codes.push(format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value()));
                 return (reg, codes);
             }
         }
         // Value already in a register
         if let Some(reg) = self.__is_value_in_register(value) {
-            return (reg, vec![]);
+            match use_certain_reg {
+                Some(reg_dst) => {
+                    if reg != reg_dst {
+                        return (
+                            reg_dst,
+                            vec![format!(
+                                "  mv\t{}, {}",
+                                REGISTER_NAMES[reg_dst], REGISTER_NAMES[reg]
+                            )],
+                        );
+                    } else {
+                        return (reg, vec![]);
+                    }
+                }
+                None => return (reg, vec![]),
+            };
         }
         // Value not in registers
-        let (reg, mut codes) = self.__get_usable_register();
+        let (reg, mut codes) = match use_certain_reg {
+            Some(reg_dst) => (reg_dst, vec![]),
+            None => self.__get_usable_register(),
+        };
         if do_load {
             let old_location = self
                 .value_location
