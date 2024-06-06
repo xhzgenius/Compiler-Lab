@@ -23,7 +23,7 @@ half:
   sw	t1, 72(sp)
   lw	t2, 120(sp)
   sw	t2, 80(sp)
-  lw	t3, 80(sp)
+  w	t3, 80(sp)
   li	t4, 2
   div	t4, t3, t4
   mv	a0, t4
@@ -40,7 +40,8 @@ f:
   sw	ra, 12(sp)
 
 .f_body:
-  la	t0, x
+  la	t1, x
+  lw	t0, t1(sp)
   li	t1, 2
   div	t1, t0, t1
   mv	a0, t1
@@ -53,12 +54,32 @@ f:
 
   .global main
 main:
-  addi	sp, sp, -32
-  sw	ra, 28(sp)
+  addi	sp, sp, -144
+  sw	ra, 140(sp)
 
 .main_body:
-  li	t0, 514
+  li	t0, -1
   sw	t0, 12(sp)
+  li	t0, -2
+  sw	t0, 20(sp)
+  li	t0, -3
+  sw	t0, 28(sp)
+  li	t0, -4
+  sw	t0, 36(sp)
+  li	t0, -5
+  sw	t0, 44(sp)
+  li	t0, -6
+  sw	t0, 52(sp)
+  li	t0, -7
+  sw	t0, 60(sp)
+  li	t0, -8
+  sw	t0, 68(sp)
+  li	t0, -9
+  sw	t0, 76(sp)
+  li	t0, -10
+  sw	t0, 84(sp)
+  w	t0, 84(sp)
+  sw	t0, 100(sp)
   li	a0, 0
   li	a1, 1
   li	a2, 2
@@ -71,13 +92,21 @@ main:
   sw	t0, 0(sp)
   li	t0, 9
   sw	t0, 4(sp)
-  li	t0, 10
+  lw	t0, 100(sp)
   sw	t0, 8(sp)
   call	half
+  sw	a0, 92(sp)
+  w	t1, 84(sp)
+  la	t3, x
+  lw	t2, t3(sp)
+  add	t3, t1, t2
+  sw	t3, 108(sp)
+  w	t4, 92(sp)
+  mv	a0, t4
   j	.main_ret
 
 .main_ret:
-  lw	ra, 28(sp)
-  addi	sp, sp, 32
+  lw	ra, 140(sp)
+  addi	sp, sp, 144
   ret
 

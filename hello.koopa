@@ -54,8 +54,34 @@ fun @f(): i32 {
 
 fun @main(): i32 {
 %6:
-  @main_0 = alloc i32
-  store 514, @main_0
-  %7 = call @half(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
-  ret %7
+  @tmp1 = alloc i32
+  store -1, @tmp1
+  @tmp2 = alloc i32
+  store -2, @tmp2
+  @tmp3 = alloc i32
+  store -3, @tmp3
+  @tmp4 = alloc i32
+  store -4, @tmp4
+  @tmp5 = alloc i32
+  store -5, @tmp5
+  @tmp6 = alloc i32
+  store -6, @tmp6
+  @tmp7 = alloc i32
+  store -7, @tmp7
+  @tmp8 = alloc i32
+  store -8, @tmp8
+  @tmp9 = alloc i32
+  store -9, @tmp9
+  @tmp10 = alloc i32
+  store -10, @tmp10
+  @a0 = alloc i32
+  %7 = load @tmp10
+  %8 = call @half(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, %7)
+  store %8, @a0
+  @tmp11 = alloc i32
+  %9 = load @tmp10
+  %10 = add %9, 1
+  store %10, @tmp11
+  %11 = load @a0
+  ret %11
 }

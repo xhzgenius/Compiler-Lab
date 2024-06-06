@@ -3,7 +3,8 @@
 use std::vec;
 
 use super::{
-    FuncValueTable, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES, REG_A0,
+    FuncValueTable, ValueLocation, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES,
+    REG_A0,
 };
 use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
 
@@ -220,9 +221,10 @@ impl AssemblyBuildable for FunctionData {
         for (&_block, node) in self.layout().bbs() {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                my_table
-                    .value_location
-                    .insert(value, local_var_size + max_call_arg_size);
+                my_table.value_location.insert(
+                    value,
+                    ValueLocation::Local(local_var_size + max_call_arg_size),
+                );
                 local_var_size += value_data.ty().size();
             }
         }
@@ -238,14 +240,22 @@ impl AssemblyBuildable for FunctionData {
             ));
         }
 
-        // Push every arg into the value table.
+        // Push every arg and global vars into the value table.
         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), self.params().len()) {
             my_table.register_user[REGISTER_FOR_ARGS[i]] = Some(self.params()[i]);
         }
         for i in REGISTER_FOR_ARGS.len()..self.params().len() {
             my_table.value_location.insert(
                 self.params()[i],
-                (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE + stack_frame_size,
+                ValueLocation::Local((i - REGISTER_FOR_ARGS.len()) * ARG_SIZE + stack_frame_size),
+            );
+        }
+        for &global in program.inst_layout() {
+            my_table.value_location.insert(
+                global,
+                ValueLocation::Global(
+                    program.borrow_value(global).name().clone().unwrap()[1..].to_string(),
+                ),
             );
         }
 
@@ -327,48 +337,60 @@ impl AssemblyBuildable for FunctionData {
                         let (stored_reg, codes) =
                             my_table.want_to_visit_value(store.value(), self, true, None);
                         body_codes.extend(codes);
-                        let offset = *my_table.value_location.get(&store.dest()).expect(
+                        let location = my_table.value_location.get(&store.dest()).expect(
                             format!("Can't find store.dest() in stack. Should not happen. ",)
                                 .as_str(),
                         );
-                        if offset <= 2047 {
-                            body_codes.push(format!(
-                                "  sw\t{}, {}(sp)",
-                                REGISTER_NAMES[stored_reg], offset
-                            ));
-                        } else {
-                            let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
-                            body_codes.extend(tmp_reg_codes);
-                            body_codes.push(format!(
-                                "  li\t{}, {}\n  sw\t{}, 0({})",
-                                REGISTER_NAMES[tmp_reg],
-                                offset,
-                                REGISTER_NAMES[stored_reg],
-                                REGISTER_NAMES[tmp_reg]
-                            ));
-                            // my_table.free_register(tmp_reg);
-                        }
-                        // my_table.free_register(stored_reg);
+                        match location {
+                            ValueLocation::Local(offset) => {
+                                let offset = *offset;
+                                if offset <= 2047 {
+                                    body_codes.push(format!(
+                                        "  sw\t{}, {}(sp)",
+                                        REGISTER_NAMES[stored_reg], offset
+                                    ));
+                                } else {
+                                    let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
+                                    body_codes.extend(tmp_reg_codes);
+                                    body_codes.push(format!(
+                                        "  li\t{}, {}\n  sw\t{}, 0({})",
+                                        REGISTER_NAMES[tmp_reg],
+                                        offset,
+                                        REGISTER_NAMES[stored_reg],
+                                        REGISTER_NAMES[tmp_reg]
+                                    ));
+                                }
+                            }
+                            ValueLocation::Global(symbol_name) => {
+                                let symbol_name = symbol_name.clone();
+                                let (tmp_reg, tmp_codes) = my_table.get_tmp_reg();
+                                body_codes.extend(tmp_codes);
+                                body_codes.push(format!(
+                                    "  la\t{}, {}\n  sw\t{}, 0({})",
+                                    REGISTER_NAMES[tmp_reg],
+                                    symbol_name,
+                                    REGISTER_NAMES[stored_reg],
+                                    REGISTER_NAMES[tmp_reg]
+                                ));
+                            }
+                        };
+
+                        // my_table.free_register(tmp_reg);
                     }
+                    // my_table.free_register(stored_reg);
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
                         let (loaded_reg, codes) =
                             my_table.want_to_visit_value(value, self, false, None);
                         body_codes.extend(codes);
-                        match load.src().is_global() {
-                            true => {
-                                body_codes.push(format!(
-                                    "  la\t{}, {}",
-                                    REGISTER_NAMES[loaded_reg],
-                                    &program.borrow_value(load.src()).name().clone().unwrap()[1..]
-                                ));
-                            }
-                            false => {
-                                let offset = *my_table.value_location.get(&load.src()).expect(
-                                    format!("Can't find load.src() in stack. Should not happen. ",)
-                                        .as_str(),
-                                );
+                        let location = my_table.value_location.get(&load.src()).clone().expect(
+                            format!("Can't find store.dest() in stack. Should not happen. ",)
+                                .as_str(),
+                        );
+                        match location {
+                            ValueLocation::Local(offset) => {
+                                let offset = *offset;
                                 if offset <= 2047 {
                                     body_codes.push(format!(
                                         "  lw\t{}, {}(sp)",
@@ -384,10 +406,21 @@ impl AssemblyBuildable for FunctionData {
                                         REGISTER_NAMES[loaded_reg],
                                         REGISTER_NAMES[tmp_reg]
                                     ));
-                                    // my_table.free_register(tmp_reg);
                                 }
                             }
-                        }
+                            ValueLocation::Global(symbol_name) => {
+                                let symbol_name = symbol_name.clone();
+                                let (tmp_reg, tmp_codes) = my_table.get_tmp_reg();
+                                body_codes.extend(tmp_codes);
+                                body_codes.push(format!(
+                                    "  la\t{}, {}\n  lw\t{}, 0({})",
+                                    REGISTER_NAMES[tmp_reg],
+                                    symbol_name,
+                                    REGISTER_NAMES[loaded_reg],
+                                    REGISTER_NAMES[tmp_reg]
+                                ));
+                            }
+                        };
                     }
 
                     // Jump operation

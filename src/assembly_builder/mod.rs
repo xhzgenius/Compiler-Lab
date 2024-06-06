@@ -35,7 +35,13 @@ pub struct FuncValueTable {
     curr_time: i32,
     register_user: [Option<Value>; 32],
     register_used_time: [i32; 32], // LRU registers
-    value_location: HashMap<Value, usize>,
+    value_location: HashMap<Value, ValueLocation>,
+}
+
+#[derive(Debug)]
+pub enum ValueLocation {
+    Local(usize),
+    Global(String),
 }
 
 impl FuncValueTable {
@@ -70,15 +76,28 @@ impl FuncValueTable {
         };
         self.register_user[reg] = None;
         self.register_used_time[reg] = 0;
-        let store_location = self
+        let mut codes = vec![];
+        match self
             .value_location
             .get(&kicked_value)
-            .expect("Can't find kicked value in table. Seems impossible. ");
-        let mut codes = vec![];
-        codes.push(format!(
-            "  sw\t{}, {}(sp)",
-            REGISTER_NAMES[reg], store_location
-        ));
+            .expect("Can't find kicked value in table. Seems impossible. ")
+        {
+            ValueLocation::Local(offset) => {
+                codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+            }
+            ValueLocation::Global(symbol_name) => {
+                let symbol_name = symbol_name.clone();
+                let (tmp_reg, tmp_codes) = self.get_tmp_reg();
+                codes.extend(tmp_codes);
+                codes.push(format!(
+                    "  la\t{}, {}\n  sw\t{}, {}(sp)",
+                    REGISTER_NAMES[tmp_reg],
+                    symbol_name,
+                    REGISTER_NAMES[reg],
+                    REGISTER_NAMES[tmp_reg]
+                ));
+            }
+        }
         codes
     }
 
@@ -160,14 +179,27 @@ impl FuncValueTable {
             None => self.__get_usable_register(),
         };
         if do_load {
-            let old_location = self
+            match self
                 .value_location
                 .get(&value)
-                .expect("Can't find wanted-to-visit value in table. ");
-            codes.push(format!(
-                "  lw\t{}, {}(sp)",
-                REGISTER_NAMES[reg], old_location,
-            ));
+                .expect("Can't find wanted-to-visit value in table. ")
+            {
+                ValueLocation::Local(offset) => {
+                    codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset,));
+                }
+                ValueLocation::Global(symbol_name) => {
+                    let symbol_name = symbol_name.clone();
+                    let (tmp_reg, tmp_codes) = self.get_tmp_reg();
+                    codes.extend(tmp_codes);
+                    codes.push(format!(
+                        "  la\t{}, {}\n  lw\t{}, {}(sp)",
+                        REGISTER_NAMES[tmp_reg],
+                        symbol_name,
+                        REGISTER_NAMES[reg],
+                        REGISTER_NAMES[tmp_reg]
+                    ));
+                }
+            }
         }
         self.register_user[reg] = Some(value);
         self.register_used_time[reg] = self.curr_time;
