@@ -316,11 +316,7 @@ if (lhs != 0) {
 
 测试脚本不允许 Koopa IR 的变量名或者基本块名带有横杠，明明 Koopa IR 规范是允许的。
 
-于是我又把变量命名方法改掉了。
-
-目前我的所有 symbol 命名规范如下：
-
-对于变量名，其命名为 `{原始变量名}_{Block深度}`；对于基本块名，如果是手动创建的基本块，其命名为 `bb{基本块计数}_{原始基本块名}`，因为生成汇编代码的时候不能有相同的 label 名；每个函数返回的部分都有一个 label，名称为 `{函数名}_ret`，函数中的所有 `ret` 语句都会跳转到此处。
+于是我又把变量命名方法改掉了。直接用原始变量名，因为 Koopa IR 不仅不限制重复名称，并且生成 IR 的时候会自动帮你避免重复名称。
 
 ###### 关于测试样例
 
@@ -405,7 +401,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 卧槽，大的要来了！
 
-##### 写自己的代码
+##### 写自己的代码：Koopa IR 生成
 
 ###### 搞定语法冲突
 
@@ -450,6 +446,28 @@ decl @stoptime()
 
 还真是。更优雅的办法是在 `CompUnit build()` 的时候使用 `koopa::ir::FunctionData::new_decl()` 在开头添加函数声明。
 
+##### 写自己的代码：目标代码（RISC-V）生成
+
+###### 全局变量
+
+首先，每个 `build` 方法都要额外增加一个 `program` 参数，因为要通过 `program.borrow_value(value)` 来找到全局变量对应的  `Value` 。
+
+其次，在 `koopa::ir::ValueKind::Load` 的处理中，要检查这个 `load` 的源是全局变量还是局部变量。检查方法是 `load.src().is_global()` 。
+
+###### 函数调用
+
+
+
+##### 命名规范
+
+经过 kira-rs 示例编译器测试，源代码中的全局变量与函数不允许重名。
+
+我的编译器允许全局常量与全局变量重名。当前代码中谁最后声明就使用谁。
+
+经过 kira-rs 示例编译器测试，RISC-V 的 label 可以以 "." 开头。
+
+因此，对于所有带名字的基本块，我以 "." 作为 label 开头，全局符号均用原始名称作为 label 。
+
 ##### 注意
 
 有的时候源代码里没有 `return` 语句，要手动补上。
@@ -467,7 +485,6 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv8 /root/compiler
 ```
-
 
 ---
 

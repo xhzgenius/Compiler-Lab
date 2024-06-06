@@ -3,25 +3,30 @@
 use std::vec;
 
 use super::{FuncValueTable, REGISTER_NAMES};
-use koopa::ir::{FunctionData, Program};
+use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
 
 pub trait AssemblyBuildable {
-    fn build(&self) -> Result<Vec<String>, String>;
+    fn build(&self, program: &Program) -> Result<Vec<String>, String>;
 }
 
 impl AssemblyBuildable for Program {
-    fn build(&self) -> Result<Vec<String>, String> {
+    fn build(&self, _: &Program) -> Result<Vec<String>, String> {
+        let mut program_codes = vec![];
+
         // Assembly code of global variables
-        // TODO
+        program_codes.push(format!("  .data"));
+        for &global in self.inst_layout() {
+            program_codes.extend(self.borrow_value(global).build(self)?);
+        }
 
         // Assembly code of functions
-        let mut function_codes = vec![];
+        program_codes.push(format!("  .text"));
         for &func in self.func_layout() {
             if self.func(func).layout().bbs().len() > 0 {
-                function_codes.extend(self.func(func).build()?);
+                program_codes.extend(self.func(func).build(self)?);
             }
         }
-        Ok(function_codes)
+        Ok(program_codes)
     }
 }
 
@@ -153,10 +158,39 @@ fn binary_op_to_assembly(
     }
 }
 
+/**
+ * Used to handle global variable declarations.
+ * The ValueData's kind should be GlobalAlloc. Or it will panic.
+ */
+impl AssemblyBuildable for ValueData {
+    fn build(&self, program: &Program) -> Result<Vec<String>, String> {
+        if let ValueKind::GlobalAlloc(global) = self.kind() {
+            let mut codes = vec![];
+            codes.push(format!("{}:", &self.name().clone().unwrap()[1..]));
+            let init_value_data = program.borrow_value(global.init());
+            match init_value_data.kind() {
+                ValueKind::Integer(int) => {
+                    codes.push(format!("  .word {}\n", int.value()));
+                }
+                ValueKind::ZeroInit(_) => {
+                    codes.push(format!("  .zero {}\n", init_value_data.ty().size()));
+                }
+                value_kind => panic!(
+                    "Global variable {} has wrong kind of initialization: {:?}! ",
+                    &self.name().clone().unwrap()[1..],
+                    value_kind
+                ),
+            }
+            Ok(codes)
+        } else {
+            panic!("Not a global alloc instruction. ")
+        }
+    }
+}
+
 impl AssemblyBuildable for FunctionData {
-    fn build(&self) -> Result<Vec<String>, String> {
+    fn build(&self, program: &Program) -> Result<Vec<String>, String> {
         let mut prologue_codes = vec![];
-        prologue_codes.push(format!("  .text"));
         prologue_codes.push(format!("  .global {}", &self.name()[1..]));
         prologue_codes.push(format!("{}:", &self.name()[1..]));
 
@@ -189,9 +223,9 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be saved. )
 
         let mut body_codes = vec![];
-        body_codes.push(format!("\n{}_body:", &self.name()[1..]));
+        body_codes.push(format!("\n.{}_body:", &self.name()[1..]));
 
-        dbg!(&self.name(), &my_table);
+        // dbg!(&self.name(), &my_table);
 
         for (&block, node) in self.layout().bbs() {
             // At the beginning of the BasicBlock, declare its name.
@@ -203,7 +237,7 @@ impl AssemblyBuildable for FunctionData {
                 .name()
                 .clone();
             if let Some(bb_name) = possible_bb_name {
-                body_codes.push(format!("\n{}:", &bb_name[1..]));
+                body_codes.push(format!("\n.{}:", &bb_name[1..]));
             }
 
             // Generate instructions.
@@ -225,7 +259,7 @@ impl AssemblyBuildable for FunctionData {
                             None => {}
                         }
                         // Jump to the return part.
-                        body_codes.push(format!("  j\t{}_ret", &self.name()[1..]));
+                        body_codes.push(format!("  j\t.{}_ret", &self.name()[1..]));
                     }
 
                     // Binary operation
@@ -281,33 +315,44 @@ impl AssemblyBuildable for FunctionData {
                     koopa::ir::ValueKind::Load(load) => {
                         let (loaded_reg, codes) = my_table.want_to_visit_value(value, self, false);
                         body_codes.extend(codes);
-                        let offset = *my_table.value_location.get(&load.src()).expect(
-                            format!("Can't find load.src() in stack. Should not happen. ",)
-                                .as_str(),
-                        );
-                        if offset <= 2047 {
-                            body_codes.push(format!(
-                                "  lw\t{}, {}(sp)",
-                                REGISTER_NAMES[loaded_reg], offset
-                            ));
-                        } else {
-                            let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
-                            body_codes.extend(tmp_reg_codes);
-                            body_codes.push(format!(
-                                "  li\t{}, {}\n  lw\t{}, 0({})",
-                                REGISTER_NAMES[tmp_reg],
-                                offset,
-                                REGISTER_NAMES[loaded_reg],
-                                REGISTER_NAMES[tmp_reg]
-                            ));
-                            // my_table.free_register(tmp_reg);
+                        match load.src().is_global() {
+                            true => {
+                                body_codes.push(format!(
+                                    "  la\t{}, {}",
+                                    REGISTER_NAMES[loaded_reg],
+                                    &program.borrow_value(load.src()).name().clone().unwrap()[1..]
+                                ));
+                            }
+                            false => {
+                                let offset = *my_table.value_location.get(&load.src()).expect(
+                                    format!("Can't find load.src() in stack. Should not happen. ",)
+                                        .as_str(),
+                                );
+                                if offset <= 2047 {
+                                    body_codes.push(format!(
+                                        "  lw\t{}, {}(sp)",
+                                        REGISTER_NAMES[loaded_reg], offset
+                                    ));
+                                } else {
+                                    let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
+                                    body_codes.extend(tmp_reg_codes);
+                                    body_codes.push(format!(
+                                        "  li\t{}, {}\n  lw\t{}, 0({})",
+                                        REGISTER_NAMES[tmp_reg],
+                                        offset,
+                                        REGISTER_NAMES[loaded_reg],
+                                        REGISTER_NAMES[tmp_reg]
+                                    ));
+                                    // my_table.free_register(tmp_reg);
+                                }
+                            }
                         }
                     }
 
                     // Jump operation
                     koopa::ir::ValueKind::Jump(jump) => {
                         body_codes.push(format!(
-                            "  j\t{}",
+                            "  j\t.{}",
                             &self
                                 .dfg()
                                 .bbs()
@@ -326,7 +371,7 @@ impl AssemblyBuildable for FunctionData {
                             my_table.want_to_visit_value(branch.cond(), self, true);
                         body_codes.extend(codes);
                         body_codes.push(format!(
-                            "  bnez\t{}, {}",
+                            "  bnez\t{}, .{}",
                             REGISTER_NAMES[cond_reg],
                             &self
                                 .dfg()
@@ -339,7 +384,7 @@ impl AssemblyBuildable for FunctionData {
                                 [1..]
                         ));
                         body_codes.push(format!(
-                            "  j\t{}",
+                            "  j\t.{}",
                             &self
                                 .dfg()
                                 .bbs()
@@ -368,7 +413,7 @@ impl AssemblyBuildable for FunctionData {
 
         // Function epilogue: change the stack pointer.
         let mut epilogue_codes = vec![];
-        epilogue_codes.push(format!("\n{}_ret:", &self.name()[1..]));
+        epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
         if local_var_size <= 2047 {
             epilogue_codes.push(format!("  addi\tsp, sp, {}", local_var_size));

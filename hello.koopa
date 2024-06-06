@@ -1,5 +1,4 @@
-global @a_0 = alloc i32, 1
-global @b_0 = alloc i32, 1
+global @x = alloc i32, zeroinit
 
 decl @getint(): i32
 
@@ -17,16 +16,38 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @main(): i32 {
+fun @half(): i32 {
 %0:
+  ret 0
+}
+
+fun @f(): i32 {
+%1:
+  %2 = load @x
+  %3 = div %2, 2
+  ret %3
+}
+
+fun @main(): i32 {
+%4:
+  @main_0 = alloc i32
+  store 514, @main_0
   jump %bb0_while_start
 
 %bb0_while_start:
-  br 1, %bb1_while_body, %bb2_while_end
+  %5 = load @main_0
+  br %5, %bb1_while_body, %bb2_while_end
 
 %bb1_while_body:
-  jump %bb2_while_end
+  %6 = load @x
+  %7 = load @main_0
+  %8 = add %6, %7
+  store %8, @main_0
+  jump %bb0_while_start
 
 %bb2_while_end:
-  ret 0
+  %9 = load @main_0
+  %10 = load @x
+  %11 = sub %9, %10
+  ret %11
 }

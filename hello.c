@@ -1,8 +1,21 @@
-int a = 1||2;
 
-int b = a;
 
-int main() {
-  while (1 || b) break;
-  return 0;
+const int x = 1;
+
+int half()
+{
+  return x / 2;
+}
+
+int x;
+
+int f() { return x / 2; }
+
+int main()
+{
+  int main = 514;
+  while (main)
+    main = x + main;
+  // return half(10);
+  return main - x;
 }

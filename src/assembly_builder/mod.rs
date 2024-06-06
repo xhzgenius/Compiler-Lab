@@ -9,7 +9,7 @@ use build_assembly::AssemblyBuildable;
 use koopa::ir::{FunctionData, Program, Value};
 
 pub fn generate_assembly(program: &Program, output_file: &mut std::fs::File) -> Result<(), String> {
-    let codes = program.build()?;
+    let codes = program.build(program)?;
     for code in codes {
         writeln!(output_file, "{}", code).expect("Write error. ");
     }

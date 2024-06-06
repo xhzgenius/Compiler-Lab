@@ -38,6 +38,20 @@ pub struct MyIRGeneratorInfo {
     function_table: HashMap<String, Function>, // Function table
 }
 
+impl MyIRGeneratorInfo {
+    fn check_duplicate_global_symbol(&self, name: &String) -> bool {
+        let result_var = match self.symbol_tables.symbol_tables[0].get(name) {
+            Some(s) => match s {
+                SymbolTableEntry::Variable(_, _) => true,
+                SymbolTableEntry::Constant(_, _) => false,
+            },
+            None => false,
+        };
+        let result_func = self.function_table.get(name).is_some();
+        result_var || result_func
+    }
+}
+
 #[derive(Debug)]
 pub struct SymbolTableStack {
     symbol_tables: Vec<HashMap<String, SymbolTableEntry>>, // Symbol table: ident-(type, Value)
@@ -65,9 +79,9 @@ impl SymbolTableStack {
     fn delete_new_table(&mut self) {
         self.symbol_tables.pop();
     }
-    fn curr_depth(&self) -> usize {
-        self.symbol_tables.len() - 1
-    }
+    // fn curr_depth(&self) -> usize {
+    //     self.symbol_tables.len() - 1
+    // }
 }
 
 pub enum SymbolTableEntry {

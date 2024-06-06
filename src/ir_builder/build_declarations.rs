@@ -32,6 +32,13 @@ impl IRBuildable for FuncDef {
         ));
 
         // Insert the function name into symbol table.
+        // Check whether there are two global symbols with the same name.
+        if my_ir_generator_info.check_duplicate_global_symbol(&func_id.content) {
+            return Err(format!(
+                "Invalid function name: {}. There was another global symbol with the same name! ",
+                func_id.content
+            ));
+        }
         my_ir_generator_info
             .function_table
             .insert(func_id.content.clone(), func);
@@ -48,26 +55,16 @@ impl IRBuildable for FuncDef {
         my_ir_generator_info.curr_func = Some(func);
 
         my_ir_generator_info.symbol_tables.add_new_table();
-        for idx in 0..program
-            .func(my_ir_generator_info.curr_func.unwrap())
-            .params()
-            .len()
-        {
+        for idx in 0..program.func(func).params().len() {
             let FuncFParam::Default(btype, ident) = &params[idx];
-            let real_param = program
-                .func(my_ir_generator_info.curr_func.unwrap())
-                .params()[idx];
+            let real_param = program.func(func).params()[idx];
             // Allocate form params.
             let form_param = create_new_local_value(program, my_ir_generator_info)
                 .alloc(Type::get(btype.content.clone()));
-            program.func_mut(func).dfg_mut().set_value_name(
-                form_param,
-                Some(format!(
-                    "@{}_{}",
-                    ident.content,
-                    my_ir_generator_info.symbol_tables.curr_depth()
-                )),
-            );
+            program
+                .func_mut(func)
+                .dfg_mut()
+                .set_value_name(form_param, Some(format!("@{}", ident.content,)));
             // Insert form params into symbol table.
             my_ir_generator_info.symbol_tables.insert(
                 ident.content.clone(),
@@ -79,7 +76,7 @@ impl IRBuildable for FuncDef {
             insert_local_instructions(program, my_ir_generator_info, [form_param, assign_inst]);
         }
 
-        // Then build the function body. 
+        // Build the function body.
         match block.build(program, my_ir_generator_info)? {
             IRBuildResult::OK => {
                 // No return instruction. Add a return instruction.
@@ -90,6 +87,7 @@ impl IRBuildable for FuncDef {
         }
 
         my_ir_generator_info.curr_func = None;
+        my_ir_generator_info.curr_block = None;
         Ok(IRBuildResult::OK)
     }
 }
@@ -190,14 +188,10 @@ impl IRBuildable for VarDecl {
                 Some(func) => {
                     let var_ptr = create_new_local_value(program, my_ir_generator_info)
                         .alloc(Type::get(var_type.clone()));
-                    program.func_mut(func).dfg_mut().set_value_name(
-                        var_ptr,
-                        Some(format!(
-                            "@{}_{}",
-                            ident.content,
-                            my_ir_generator_info.symbol_tables.curr_depth()
-                        )),
-                    );
+                    program
+                        .func_mut(func)
+                        .dfg_mut()
+                        .set_value_name(var_ptr, Some(format!("@{}", ident.content,)));
                     // Insert the "alloc" instruction.
                     insert_local_instructions(program, my_ir_generator_info, [var_ptr]);
                     if let Some(rhs) = possible_rhs {
@@ -218,6 +212,13 @@ impl IRBuildable for VarDecl {
                 }
                 // Or if it's global:
                 None => {
+                    // Check whether there are two global symbols with the same name.
+                    if my_ir_generator_info.check_duplicate_global_symbol(&ident.content) {
+                        return Err(format!(
+                            "Invalid global variable name: {}. There was another global symbol with the same name! ",
+                            ident.content
+                        ));
+                    }
                     let var_ptr = match possible_rhs {
                         Some(rhs) => match rhs.build(program, my_ir_generator_info)? {
                             IRExpBuildResult::Const(int) => {
@@ -232,15 +233,7 @@ impl IRBuildable for VarDecl {
                             program.new_value().global_alloc(zero_init)
                         }
                     };
-                    program.set_value_name(
-                        var_ptr,
-                        Some(format!(
-                            "@{}_{}",
-                            ident.content,
-                            my_ir_generator_info.symbol_tables.curr_depth()
-                        )),
-                    );
-                    // Insert the "global alloc" instruction. (Maybe no need?)
+                    program.set_value_name(var_ptr, Some(format!("@{}", ident.content,)));
                     var_ptr
                 }
             };
