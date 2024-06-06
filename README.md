@@ -482,6 +482,8 @@ decl @stoptime()
 
 目前所有的 `load` 和 `store` 指令全都是直接对内存操作的。将来得优化成 LRU cache 形式。
 
+啊？还真是寄存器分配有bug，全放在栈上就通过了？！
+
 ##### 本地测试
 
 测试 Koopa IR:

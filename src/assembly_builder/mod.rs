@@ -22,7 +22,8 @@ const REGISTER_NAMES: [&str; 32] = [
     "t5", "x31",
 ];
 
-const REGISTER_FOR_TEMP: [usize; 7] = [5, 6, 7, 28, 29, 30, 31];
+// const REGISTER_FOR_TEMP: [usize; 7] = [5, 6, 7, 28, 29, 30, 31];
+const REGISTER_FOR_TEMP: [usize; 2] = [5, 6];
 
 const REGISTER_FOR_ARGS: [usize; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
 

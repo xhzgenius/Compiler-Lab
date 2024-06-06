@@ -32,7 +32,11 @@ fun @add(%y_param: i32) {
 
 fun @main(): i32 {
 %6:
-  call @add(10)
-  %7 = load @x
-  ret %7
+  @a = alloc i32
+  @b = alloc i32
+  %7 = load @a
+  store %7, @b
+  %8 = load @b
+  %9 = add %8, 1
+  ret %9
 }

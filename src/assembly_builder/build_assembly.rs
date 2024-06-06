@@ -286,7 +286,7 @@ impl AssemblyBuildable for FunctionData {
             // Generate instructions.
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                body_codes.push(format!("# {:?} {:?}", value_data.name(), value_data.kind()));
+                body_codes.push(format!("# {:?}", value_data.kind()));
                 match value_data.kind() {
                     // Do different things based on instruction kind.
 
@@ -376,10 +376,7 @@ impl AssemblyBuildable for FunctionData {
                                 ));
                             }
                         };
-
-                        // my_table.free_register(tmp_reg);
                     }
-                    // my_table.free_register(stored_reg);
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {

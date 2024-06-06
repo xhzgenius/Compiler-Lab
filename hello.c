@@ -6,6 +6,10 @@ void add(int y) {
 }
 
 int main() {
+    int a;
+    int b;
+    b = a;
+    return b+1;
     add(10);
     return x;
 }
