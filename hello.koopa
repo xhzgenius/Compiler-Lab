@@ -1,5 +1,5 @@
-global @var_0 = alloc i32, zeroinit
-global @var_0_0 = alloc i32, 1
+global @a_0 = alloc i32, 1
+global @b_0 = alloc i32, 1
 
 decl @getint(): i32
 
@@ -17,24 +17,16 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @func(%x_param: i32): i32 {
-%0:
-  @x_1 = alloc i32
-  store %x_param, @x_1
-  %1 = load @x_1
-  ret %1
-}
-
 fun @main(): i32 {
-%2:
-  %3 = call @func(1)
-  call @putint(%3)
-  %4 = load @var_0_0
-  %5 = call @func(%4)
-  store %5, @var_0_0
-  %6 = call @func(2)
-  call @putint(%6)
-  call @putch(10)
-  %7 = load @var_0_0
-  ret %7
+%0:
+  jump %bb0_while_start
+
+%bb0_while_start:
+  br 1, %bb1_while_body, %bb2_while_end
+
+%bb1_while_body:
+  jump %bb2_while_end
+
+%bb2_while_end:
+  ret 0
 }

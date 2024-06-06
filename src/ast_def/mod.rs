@@ -22,7 +22,7 @@
 //! ConstDef      ::= IDENT "=" ConstInitVal;
 //!
 //! VarDecl       ::= BType VarDef {"," VarDef} ";";
-//! VarDef        ::= IDENT | IDENT "=" InitVal;
+//! VarDef        ::= IDENT | IDENT "=" InitVal; // If this VarDef is global, InitVal should be ConstInitVal.
 //!
 //! ======================================================
 //! Statements

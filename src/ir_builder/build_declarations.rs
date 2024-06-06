@@ -78,6 +78,8 @@ impl IRBuildable for FuncDef {
                 create_new_local_value(program, my_ir_generator_info).store(real_param, form_param);
             insert_local_instructions(program, my_ir_generator_info, [form_param, assign_inst]);
         }
+
+        // Then build the function body. 
         match block.build(program, my_ir_generator_info)? {
             IRBuildResult::OK => {
                 // No return instruction. Add a return instruction.
@@ -86,6 +88,8 @@ impl IRBuildable for FuncDef {
             }
             IRBuildResult::EARLYSTOPPING => {}
         }
+
+        my_ir_generator_info.curr_func = None;
         Ok(IRBuildResult::OK)
     }
 }
@@ -106,19 +110,6 @@ impl IRBuildable for Block {
                 break;
             }
         }
-        // for (_name, entry) in my_ir_generator_info
-        //     .symbol_tables
-        //     .symbol_tables
-        //     .last()
-        //     .unwrap()
-        // {
-        //     if let SymbolTableEntry::Variable(_tk, value) = entry {
-        //         program
-        //             .func_mut(my_ir_generator_info.curr_func.unwrap())
-        //             .dfg_mut()
-        //             .remove_value(*value);
-        //     }
-        // }
         my_ir_generator_info.symbol_tables.delete_new_table();
         Ok(block_result)
     }
