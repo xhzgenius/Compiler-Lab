@@ -69,8 +69,23 @@ impl FuncValueTable {
         None
     }
 
-    fn assign_v1_to_v2(&self, v1: Value, v2: Value) -> Vec<String> {
-        todo!()
+    fn assign_v1_to_v2(
+        &mut self,
+        v1: Value,
+        v2: Value,
+        program: &Program,
+        fd: &FunctionData,
+    ) -> Vec<String> {
+        let mut codes = vec![];
+        let (reg1, codes1) = self.want_to_visit_value(v1, program, fd, true, None);
+        let (reg2, codes2) = self.want_to_visit_value(v2, program, fd, false, None);
+        codes.extend(codes1);
+        codes.extend(codes2);
+        codes.push(format!(
+            "  mv\t{}, {}",
+            REGISTER_NAMES[reg2], REGISTER_NAMES[reg1]
+        ));
+        codes
     }
 
     /// Kick a value and store it to the stack.
@@ -79,8 +94,6 @@ impl FuncValueTable {
             Some(value) => value,
             None => return vec![],
         };
-        self.register_user[reg] = None;
-        self.register_used_time[reg] = 0;
         let mut codes = vec![];
         match self
             .value_location
@@ -116,6 +129,8 @@ impl FuncValueTable {
                 ));
             }
         }
+        self.register_user[reg] = None;
+        self.register_used_time[reg] = 0;
         codes
     }
 
@@ -149,6 +164,7 @@ impl FuncValueTable {
         do_load: bool,
         use_certain_reg: Option<usize>,
     ) -> (usize, Vec<String>) {
+        self.curr_time += 1;
         let value_kind = match value.is_global() {
             true => program.borrow_value(value).kind().clone(),
             false => fd.dfg().value(value).kind().clone(),

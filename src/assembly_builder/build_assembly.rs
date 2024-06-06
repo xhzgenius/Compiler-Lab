@@ -336,90 +336,22 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        let (stored_reg, codes) =
-                            my_table.want_to_visit_value(store.value(), program, self, true, None);
-                        body_codes.extend(codes);
-                        let location = my_table.value_location.get(&store.dest()).expect(
-                            format!("Can't find store.dest() in stack. Should not happen. ",)
-                                .as_str(),
-                        );
-                        match location {
-                            ValueLocation::Local(offset) => {
-                                let offset = *offset;
-                                if offset <= 2047 {
-                                    body_codes.push(format!(
-                                        "  sw\t{}, {}(sp)",
-                                        REGISTER_NAMES[stored_reg], offset
-                                    ));
-                                } else {
-                                    let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
-                                    body_codes.extend(tmp_reg_codes);
-                                    body_codes.push(format!(
-                                        "  li\t{}, {}\n  sw\t{}, 0({})",
-                                        REGISTER_NAMES[tmp_reg],
-                                        offset,
-                                        REGISTER_NAMES[stored_reg],
-                                        REGISTER_NAMES[tmp_reg]
-                                    ));
-                                }
-                            }
-                            ValueLocation::Global(symbol_name) => {
-                                let symbol_name = symbol_name.clone();
-                                let (tmp_reg, tmp_codes) = my_table.get_tmp_reg();
-                                body_codes.extend(tmp_codes);
-                                body_codes.push(format!(
-                                    "  la\t{}, {}\n  sw\t{}, 0({})",
-                                    REGISTER_NAMES[tmp_reg],
-                                    symbol_name,
-                                    REGISTER_NAMES[stored_reg],
-                                    REGISTER_NAMES[tmp_reg]
-                                ));
-                            }
-                        };
+                        body_codes.extend(my_table.assign_v1_to_v2(
+                            store.value(),
+                            store.dest(),
+                            program,
+                            self,
+                        ));
                     }
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        let (loaded_reg, codes) =
-                            my_table.want_to_visit_value(value, program, self, false, None);
-                        body_codes.extend(codes);
-                        let location = my_table.value_location.get(&load.src()).clone().expect(
-                            format!("Can't find store.dest() in stack. Should not happen. ",)
-                                .as_str(),
-                        );
-                        match location {
-                            ValueLocation::Local(offset) => {
-                                let offset = *offset;
-                                if offset <= 2047 {
-                                    body_codes.push(format!(
-                                        "  lw\t{}, {}(sp)",
-                                        REGISTER_NAMES[loaded_reg], offset
-                                    ));
-                                } else {
-                                    let (tmp_reg, tmp_reg_codes) = my_table.get_tmp_reg();
-                                    body_codes.extend(tmp_reg_codes);
-                                    body_codes.push(format!(
-                                        "  li\t{}, {}\n  lw\t{}, 0({})",
-                                        REGISTER_NAMES[tmp_reg],
-                                        offset,
-                                        REGISTER_NAMES[loaded_reg],
-                                        REGISTER_NAMES[tmp_reg]
-                                    ));
-                                }
-                            }
-                            ValueLocation::Global(symbol_name) => {
-                                let symbol_name = symbol_name.clone();
-                                let (tmp_reg, tmp_codes) = my_table.get_tmp_reg();
-                                body_codes.extend(tmp_codes);
-                                body_codes.push(format!(
-                                    "  la\t{}, {}\n  lw\t{}, 0({})",
-                                    REGISTER_NAMES[tmp_reg],
-                                    symbol_name,
-                                    REGISTER_NAMES[loaded_reg],
-                                    REGISTER_NAMES[tmp_reg]
-                                ));
-                            }
-                        };
+                        body_codes.extend(my_table.assign_v1_to_v2(
+                            load.src(),
+                            value,
+                            program,
+                            self,
+                        ));
                     }
 
                     // Jump operation
@@ -531,6 +463,15 @@ impl AssemblyBuildable for FunctionData {
         // Function epilogue.
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
+
+        // Store back all the global variables in registers. 
+        for i in 0..REGISTER_NAMES.len() {
+            if let Some(value) = my_table.register_user[i] {
+                if value.is_global() {
+                    my_table.save_register(i);
+                }
+            }
+        }
 
         // Restore registar ra. (Return address)
         epilogue_codes.push(format!("  lw\tra, {}(sp)", stack_frame_size - reg_ra_size));
