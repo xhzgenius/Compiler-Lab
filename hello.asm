@@ -18,21 +18,21 @@ add:
 # Load(Load { src: Value(1073741825) })
   lw	t1, 0(sp)
 # Binary(Binary { op: Add, lhs: Value(1073741827), rhs: Value(1073741828) })
-  sw	t0, 8(sp)
-  add	t0, t0, t1
+  add	t2, t0, t1
 # Store(Store { value: Value(1073741829), dest: Value(2) })
-  sw	t1, 12(sp)
-  la	t1, x
-  sw	t0, 0(t1)
+  la	t3, x
+  sw	t2, 0(t3)
 # Load(Load { src: Value(1073741825) })
-  lw	t1, 0(sp)
+  lw	t3, 0(sp)
 # Binary(Binary { op: Sub, lhs: Value(1073741831), rhs: Value(1073741832) })
-  sw	t0, 16(sp)
-  li	t0, 1
-  sub	t0, t1, t0
+  li	t4, 1
+  sub	t4, t3, t4
 # Call(Call { callee: Function(9), args: [Value(1073741833)] })
-  sw	t0, 24(sp)
-  sw	t1, 20(sp)
+  sw	t0, 8(sp)
+  sw	t1, 12(sp)
+  sw	t2, 16(sp)
+  sw	t3, 20(sp)
+  sw	t4, 24(sp)
   lw	a0, 24(sp)
   call	add
 # Return(Return { value: None })
@@ -58,11 +58,10 @@ main:
 # Load(Load { src: Value(1073741837) })
   lw	t1, 8(sp)
 # Binary(Binary { op: Add, lhs: Value(1073741840), rhs: Value(1073741841) })
-  sw	t0, 16(sp)
-  li	t0, 1
-  add	t0, t1, t0
+  li	t2, 1
+  add	t2, t1, t2
 # Return(Return { value: Some(Value(1073741842)) })
-  mv	a0, t0
+  mv	a0, t2
   j	.main_ret
 
 .main_ret:

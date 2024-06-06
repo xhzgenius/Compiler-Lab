@@ -69,6 +69,10 @@ impl FuncValueTable {
         None
     }
 
+    fn assign_v1_to_v2(&self, v1: Value, v2: Value) -> Vec<String> {
+        todo!()
+    }
+
     /// Kick a value and store it to the stack.
     fn save_register(&mut self, reg: usize) -> Vec<String> {
         let kicked_value = match self.register_user[reg] {
@@ -116,10 +120,8 @@ impl FuncValueTable {
     }
 
     /// Finds a usable register.
-    /// If all registers are being used, then kicks one and returns the kicked register and its former user (Value).
-    /// Else returns the empty register and None.
-    /// This function should not be called outside.
-    fn __get_usable_register(&mut self) -> (usize, Vec<String>) {
+    /// If all registers are being used, then kicks one.
+    fn get_tmp_reg(&mut self) -> (usize, Vec<String>) {
         self.curr_time += 1;
         let mut now_min = std::i32::MAX;
         let mut possible_choice: Option<usize> = None;
@@ -177,6 +179,10 @@ impl FuncValueTable {
             match use_certain_reg {
                 Some(reg_dst) => {
                     if reg != reg_dst {
+                        self.register_user[reg_dst] = Some(value);
+                        self.register_used_time[reg_dst] = self.curr_time;
+                        self.register_user[reg] = None;
+                        self.register_used_time[reg] = 0;
                         return (
                             reg_dst,
                             vec![format!(
@@ -194,7 +200,7 @@ impl FuncValueTable {
         // Value not in registers
         let (reg, mut codes) = match use_certain_reg {
             Some(reg_dst) => (reg_dst, vec![]),
-            None => self.__get_usable_register(),
+            None => self.get_tmp_reg(),
         };
         if do_load {
             match self
@@ -235,10 +241,6 @@ impl FuncValueTable {
         self.register_user[reg] = Some(value);
         self.register_used_time[reg] = self.curr_time;
         (reg, codes)
-    }
-
-    fn get_tmp_reg(&mut self) -> (usize, Vec<String>) {
-        self.__get_usable_register()
     }
 
     // /// Frees a register.
