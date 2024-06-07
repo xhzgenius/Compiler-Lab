@@ -286,7 +286,7 @@ impl AssemblyBuildable for FunctionData {
             // Generate instructions.
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                body_codes.push(format!("# {:?}", value_data.kind()));
+                // body_codes.push(format!("# {:?}", value_data.kind()));
                 match value_data.kind() {
                     // Do different things based on instruction kind.
 
@@ -465,7 +465,7 @@ impl AssemblyBuildable for FunctionData {
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
         // Store back all the global variables in registers. 
-        epilogue_codes.push(format!("# Save global variables."));
+        // epilogue_codes.push(format!("# Save global variables."));
         for i in 0..REGISTER_NAMES.len() {
             if let Some(value) = my_table.register_user[i] {
                 if value.is_global() {

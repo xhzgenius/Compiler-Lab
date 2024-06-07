@@ -1,4 +1,4 @@
-global @x = alloc i32, 0
+global @var = alloc i32, 0
 
 decl @getint(): i32
 
@@ -16,26 +16,29 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @add(%y_param: i32): i32 {
-%0:
-  @y = alloc i32
-  store %y_param, @y
-  %1 = load @y
-  %2 = sub %1, 1
-  %3 = call @add(%2)
-  %4 = load @x
-  %5 = add %3, %4
-  store %5, @x
-  ret 1
-}
-
 fun @main(): i32 {
-%6:
-  @a = alloc i32
-  @b = alloc i32
-  %7 = load @a
-  store %7, @b
-  %8 = load @b
-  %9 = add %8, 1
-  ret %9
+%0:
+  jump %bb0_while_start
+
+%bb0_while_start:
+  %1 = load @var
+  @LAnd_result = alloc i32
+  store 0, @LAnd_result
+  %2 = ne %1, 0
+  br %2, %bb3_LAnd_if_block, %bb4_LAnd_if_block_end
+
+%bb1_while_body:
+  jump %bb0_while_start
+
+%bb2_while_end:
+  %3 = load @var
+  ret %3
+
+%bb3_LAnd_if_block:
+  store 1, @LAnd_result
+  jump %bb4_LAnd_if_block_end
+
+%bb4_LAnd_if_block_end:
+  %4 = load @LAnd_result
+  br %4, %bb1_while_body, %bb2_while_end
 }
