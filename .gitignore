@@ -1,2 +1,5 @@
 /target
 .vscode/
+test/*.log
+test/tmp*
+test/performance_test/03_sort*

@@ -22,7 +22,8 @@ const REGISTER_NAMES: [&str; 32] = [
     "t5", "x31",
 ];
 
-const REGISTER_FOR_TEMP: [usize; 7] = [5, 6, 7, 28, 29, 30, 31];
+// const REGISTER_FOR_TEMP: [usize; 7] = [5, 6, 7, 28, 29, 30, 31];
+const REGISTER_FOR_TEMP: [usize; 6] = [5, 6, 7, 28, 29, 30];
 // const REGISTER_FOR_TEMP: [usize; 2] = [5, 6];
 
 const REGISTER_FOR_ARGS: [usize; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
@@ -32,6 +33,9 @@ const ARG_SIZE: usize = 4;
 const REG_A0: usize = 10;
 
 const REG_SP: usize = 2;
+
+/// This register is for temporary integers only!
+const REG_X31: usize = 31;
 
 const MAX_SHORT_INT: isize = 2047;
 const MIN_SHORT_INT: isize = -2048;
@@ -98,16 +102,14 @@ impl FuncValueTable {
         if MIN_SHORT_INT <= offset && offset <= MAX_SHORT_INT {
             codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
         } else {
-            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
-            codes.extend(tmp_reg_codes);
             codes.push(format!(
                 "  li\t{}, {}\n  add\t{}, {}, sp\n  sw\t{}, 0({})",
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
                 offset,
-                REGISTER_NAMES[tmp_reg],
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
+                REGISTER_NAMES[REG_X31],
                 REGISTER_NAMES[reg],
-                REGISTER_NAMES[tmp_reg]
+                REGISTER_NAMES[REG_X31]
             ));
         }
         codes
@@ -117,16 +119,14 @@ impl FuncValueTable {
         if MIN_SHORT_INT <= offset && offset <= MAX_SHORT_INT {
             codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
         } else {
-            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
-            codes.extend(tmp_reg_codes);
             codes.push(format!(
                 "  li\t{}, {}\n  add\t{}, {}, sp\n  lw\t{}, 0({})",
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
                 offset,
-                REGISTER_NAMES[tmp_reg],
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
+                REGISTER_NAMES[REG_X31],
                 REGISTER_NAMES[reg],
-                REGISTER_NAMES[tmp_reg]
+                REGISTER_NAMES[REG_X31]
             ));
         }
         codes
@@ -139,18 +139,28 @@ impl FuncValueTable {
                 REGISTER_NAMES[reg], REGISTER_NAMES[reg], offset
             ));
         } else {
-            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
-            codes.extend(tmp_reg_codes);
             codes.push(format!(
                 "  li\t{}, {}\n  add\t{}, {}, {}",
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
                 offset,
                 REGISTER_NAMES[reg],
                 REGISTER_NAMES[reg],
-                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[REG_X31],
             ));
         }
         codes
+    }
+    fn load_global(&mut self, reg: usize, symbol_name: String) -> Vec<String> {
+        vec![format!(
+            "  la\t{}, {}\n  lw\t{}, 0({})",
+            REGISTER_NAMES[REG_X31], symbol_name, REGISTER_NAMES[reg], REGISTER_NAMES[REG_X31]
+        )]
+    }
+    fn store_global(&mut self, reg: usize, symbol_name: String) -> Vec<String> {
+        vec![format!(
+            "  la\t{}, {}\n  sw\t{}, 0({})",
+            REGISTER_NAMES[REG_X31], symbol_name, REGISTER_NAMES[reg], REGISTER_NAMES[REG_X31]
+        )]
     }
 
     /// Kick a value and store it to the stack.
@@ -171,15 +181,7 @@ impl FuncValueTable {
             }
             ValueLocation::Global(symbol_name) => {
                 let symbol_name = symbol_name.clone();
-                let (tmp_reg, tmp_codes) = self.get_tmp_reg();
-                codes.extend(tmp_codes);
-                codes.push(format!(
-                    "  la\t{}, {}\n  sw\t{}, 0({})",
-                    REGISTER_NAMES[tmp_reg],
-                    symbol_name,
-                    REGISTER_NAMES[reg],
-                    REGISTER_NAMES[tmp_reg]
-                ));
+                codes.extend(self.store_global(reg, symbol_name));
             }
         }
         self.register_user[reg] = None;
@@ -235,12 +237,14 @@ impl FuncValueTable {
                 };
             } else {
                 // Allocate a new register for the constant integer.
-                let (reg, mut codes) = match use_certain_reg {
-                    Some(reg_dst) => (reg_dst, vec![]),
-                    None => self.get_tmp_reg(),
+                let reg = match use_certain_reg {
+                    Some(reg_dst) => reg_dst,
+                    None => REG_X31,
                 };
-                codes.push(format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value()));
-                return (reg, codes);
+                return (
+                    reg,
+                    vec![format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value())],
+                );
             }
         }
         // Value already in a register
@@ -283,15 +287,7 @@ impl FuncValueTable {
                 }
                 ValueLocation::Global(symbol_name) => {
                     let symbol_name = symbol_name.clone();
-                    let (tmp_reg, tmp_codes) = self.get_tmp_reg();
-                    codes.extend(tmp_codes);
-                    codes.push(format!(
-                        "  la\t{}, {}\n  lw\t{}, 0({})",
-                        REGISTER_NAMES[tmp_reg],
-                        symbol_name,
-                        REGISTER_NAMES[reg],
-                        REGISTER_NAMES[tmp_reg]
-                    ));
+                    codes.extend(self.load_global(reg, symbol_name));
                 }
             }
         }

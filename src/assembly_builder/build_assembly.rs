@@ -280,6 +280,7 @@ impl AssemblyBuildable for FunctionData {
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
                 body_codes.push(format!("# {:?}", value_data.kind()));
+                // dbg!(value_data);
                 match value_data.kind() {
                     // Do different things based on instruction kind.
 
