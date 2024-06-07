@@ -1,11 +1,8 @@
-int x = 0;
+int a,b;
 
-int add(int y) {
-    x = add(y-1)+x;
-    return 1;
-}
-
-int main() {
-    add(10);
-    return x;
+int main(){
+    a=10;
+    b=5;
+    int c=a*2+b+3;
+    return c;
 }

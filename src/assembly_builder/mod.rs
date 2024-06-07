@@ -64,6 +64,16 @@ impl FuncValueTable {
         }
     }
 
+    fn __update_user(&mut self, reg: usize, user: Value) {
+        self.curr_time += 1;
+        self.register_user[reg] = Some(user);
+        self.register_used_time[reg] = self.curr_time;
+    }
+    fn __free_user(&mut self, reg: usize) {
+        self.register_user[reg] = None;
+        self.register_used_time[reg] = 0;
+    }
+
     fn __is_value_in_register(&self, value: Value) -> Option<usize> {
         for i in 0..REGISTER_NAMES.len() {
             match self.register_user[i] {
@@ -184,8 +194,7 @@ impl FuncValueTable {
                 codes.extend(self.store_global(reg, symbol_name));
             }
         }
-        self.register_user[reg] = None;
-        self.register_used_time[reg] = 0;
+        self.__free_user(reg);
         codes
     }
 
@@ -227,47 +236,33 @@ impl FuncValueTable {
         if let koopa::ir::ValueKind::Integer(int) = value_kind {
             // Allocate a new register for the Integer.
             // I don't want to use assembly codes like addi because I am lazy.
-            if int.value() == 0 {
-                return match use_certain_reg {
-                    Some(reg_dst) => (
-                        reg_dst,
-                        vec![format!("  li\t{}, 0", REGISTER_NAMES[reg_dst])],
-                    ),
-                    None => (0, vec![]), // Register x0(id=0) is always 0.
-                };
-            } else {
-                // Allocate a new register for the constant integer.
-                let reg = match use_certain_reg {
-                    Some(reg_dst) => reg_dst,
-                    None => REG_X31,
-                };
-                return (
-                    reg,
-                    vec![format!("  li\t{}, {}", REGISTER_NAMES[reg], int.value())],
-                );
-            }
+            let (dst_reg, mut codes) = match use_certain_reg {
+                Some(reg) => (reg, vec![]),
+                None => self.get_tmp_reg(),
+            };
+            codes.push(format!("  li\t{}, {}", REGISTER_NAMES[dst_reg], int.value()));
+            // self.__update_user(dst_reg, value);
+            return (dst_reg, codes);
         }
         // Value already in a register
-        if let Some(reg) = self.__is_value_in_register(value) {
+        if let Some(src_reg) = self.__is_value_in_register(value) {
             match use_certain_reg {
                 Some(reg_dst) => {
-                    if reg != reg_dst {
-                        self.register_user[reg_dst] = Some(value);
-                        self.register_used_time[reg_dst] = self.curr_time;
-                        self.register_user[reg] = None;
-                        self.register_used_time[reg] = 0;
+                    if src_reg != reg_dst {
+                        self.__update_user(reg_dst, value);
+                        self.__free_user(src_reg);
                         return (
                             reg_dst,
                             vec![format!(
                                 "  mv\t{}, {}",
-                                REGISTER_NAMES[reg_dst], REGISTER_NAMES[reg]
+                                REGISTER_NAMES[reg_dst], REGISTER_NAMES[src_reg]
                             )],
                         );
                     } else {
-                        return (reg, vec![]);
+                        return (src_reg, vec![]);
                     }
                 }
-                None => return (reg, vec![]),
+                None => return (src_reg, vec![]),
             };
         }
         // Value not in registers
@@ -291,8 +286,7 @@ impl FuncValueTable {
                 }
             }
         }
-        self.register_user[reg] = Some(value);
-        self.register_used_time[reg] = self.curr_time;
+        self.__update_user(reg, value);
         (reg, codes)
     }
 

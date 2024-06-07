@@ -160,6 +160,12 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv3 /root/compiler
 ```
 
+我从 [https://github.com/segviol/indigo/](https://github.com/segviol/indigo/) 获得了大量的测试样例以及一个测试脚本。用法如下：
+
+```
+python test/test.py target/debug/compiler-lab.exe test/sysyruntimelibrary/libsysy.a test/functional_test -r --compile_only
+```
+
 ---
 
 #### Lv. 4 常量和变量
