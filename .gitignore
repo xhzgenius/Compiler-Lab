@@ -1,6 +1,2 @@
 /target
 .vscode/
-my_tests/*.log
-my_tests/tmp*
-my_tests/performance_test/03_sort*
-my_tests/output
