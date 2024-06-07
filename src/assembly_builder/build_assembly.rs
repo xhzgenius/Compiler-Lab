@@ -161,6 +161,18 @@ fn binary_op_to_assembly(
     }
 }
 
+fn store_global_variables(my_table: &mut FuncValueTable) -> Vec<String> {
+    let mut codes = vec![format!("# Save global variables.")];
+    for i in 0..REGISTER_NAMES.len() {
+        if let Some(value) = my_table.register_user[i] {
+            if value.is_global() {
+                codes.extend(my_table.save_register(i));
+            }
+        }
+    }
+    codes
+}
+
 impl AssemblyBuildable for ValueData {
     /// Used to handle global variable declarations.
     /// The ValueData's kind should be GlobalAlloc. Or it will panic.
@@ -196,7 +208,7 @@ impl AssemblyBuildable for FunctionData {
         prologue_codes.push(format!("{}:", &self.name()[1..]));
 
         // Clear register usages when entering the function.
-        let mut my_table = FuncValueTable::new();
+        let mut my_table = FuncValueTable::new(program, self);
 
         // In my compiler, every defined local variable (like "@y = alloc i32")
         // and temp values has its place in memory.
@@ -218,20 +230,18 @@ impl AssemblyBuildable for FunctionData {
             }
         }
         let mut local_var_size: usize = 0; // Bytes for storing all local variables.
-        for (&_block, node) in self.layout().bbs() {
-            for &value in node.insts().keys() {
-                let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                my_table.value_location.insert(
-                    value,
-                    ValueLocation::Local(local_var_size + max_call_arg_size),
-                );
-                local_var_size += value_data.ty().size();
-            }
+        for &value in self.dfg().values().keys() {
+            let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
+            my_table.value_location.insert(
+                value,
+                ValueLocation::Local(local_var_size + max_call_arg_size),
+            );
+            local_var_size += value_data.ty().size();
         }
         let stack_frame_size = (local_var_size + max_call_arg_size + reg_ra_size + 15) / 16 * 16;
 
         // Change the stack pointer.
-        prologue_codes.extend(my_table.add_with_offset(REG_SP, stack_frame_size as isize));
+        prologue_codes.extend(my_table.add_with_offset(REG_SP, -(stack_frame_size as isize)));
 
         // Push every arg and global vars into the value table.
         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), self.params().len()) {
@@ -397,11 +407,6 @@ impl AssemblyBuildable for FunctionData {
                     }
 
                     koopa::ir::ValueKind::Call(call) => {
-                        // Save caller-saved registers.
-                        for reg in REGISTER_FOR_TEMP {
-                            body_codes.extend(my_table.save_register(reg));
-                        }
-
                         // Push args into registers for args.
                         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), call.args().len()) {
                             let (reg, codes) = my_table.want_to_visit_value(
@@ -431,6 +436,14 @@ impl AssemblyBuildable for FunctionData {
                                 .push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
                         }
 
+                        // Save caller-saved registers.
+                        for reg in REGISTER_FOR_TEMP {
+                            body_codes.extend(my_table.save_register(reg));
+                        }
+
+                        // Store back all the global variables in registers.
+                        body_codes.extend(store_global_variables(&mut my_table));
+
                         // Call the function.
                         body_codes.push(format!(
                             "  call\t{}",
@@ -459,14 +472,7 @@ impl AssemblyBuildable for FunctionData {
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
         // Store back all the global variables in registers.
-        epilogue_codes.push(format!("# Save global variables."));
-        for i in 0..REGISTER_NAMES.len() {
-            if let Some(value) = my_table.register_user[i] {
-                if value.is_global() {
-                    epilogue_codes.extend(my_table.save_register(i));
-                }
-            }
-        }
+        epilogue_codes.extend(store_global_variables(&mut my_table));
 
         // Restore registar ra. (Return address)
         epilogue_codes.push(format!("  lw\tra, {}(sp)", stack_frame_size - reg_ra_size));
@@ -476,7 +482,7 @@ impl AssemblyBuildable for FunctionData {
 
         // Restore stack pointer.
 
-        epilogue_codes.extend(my_table.add_with_offset(REG_SP, -(stack_frame_size as isize)));
+        epilogue_codes.extend(my_table.add_with_offset(REG_SP, stack_frame_size as isize));
 
         // Return
         epilogue_codes.push(format!("  ret\n"));

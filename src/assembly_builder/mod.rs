@@ -40,8 +40,9 @@ const REG_X31: usize = 31;
 const MAX_SHORT_INT: isize = 2047;
 const MIN_SHORT_INT: isize = -2048;
 
-#[derive(Debug)]
-pub struct FuncValueTable {
+pub struct FuncValueTable<'a> {
+    program: &'a Program,
+    fd: &'a FunctionData,
     curr_time: i32,
     register_user: [Option<Value>; 32],
     register_used_time: [i32; 32], // LRU registers
@@ -54,9 +55,11 @@ pub enum ValueLocation {
     Global(String),
 }
 
-impl FuncValueTable {
-    fn new() -> FuncValueTable {
+impl FuncValueTable<'_> {
+    fn new<'a>(program: &'a Program, fd: &'a FunctionData) -> FuncValueTable<'a> {
         FuncValueTable {
+            program,
+            fd,
             curr_time: 0,
             register_user: [None; 32],
             register_used_time: [0; 32],
@@ -180,18 +183,24 @@ impl FuncValueTable {
             None => return vec![],
         };
         let mut codes = vec![];
-        match self
-            .value_location
-            .get(&kicked_value)
-            .expect("Can't find kicked value in table. Seems impossible. ")
-        {
-            ValueLocation::Local(offset) => {
-                let offset = offset.clone();
-                codes.extend(self.store_with_offset(reg, offset as isize));
-            }
-            ValueLocation::Global(symbol_name) => {
-                let symbol_name = symbol_name.clone();
-                codes.extend(self.store_global(reg, symbol_name));
+        let value_kind = match kicked_value.is_global() {
+            true => self.program.borrow_value(kicked_value).kind().clone(),
+            false => self.fd.dfg().value(kicked_value).kind().clone(),
+        };
+        if !value_kind.is_const() {
+            match self
+                .value_location
+                .get(&kicked_value)
+                .expect("Can't find kicked value in table. Seems impossible. ")
+            {
+                ValueLocation::Local(offset) => {
+                    let offset = offset.clone();
+                    codes.extend(self.store_with_offset(reg, offset as isize));
+                }
+                ValueLocation::Global(symbol_name) => {
+                    let symbol_name = symbol_name.clone();
+                    codes.extend(self.store_global(reg, symbol_name));
+                }
             }
         }
         self.__free_user(reg);
@@ -240,8 +249,12 @@ impl FuncValueTable {
                 Some(reg) => (reg, vec![]),
                 None => self.get_tmp_reg(),
             };
-            codes.push(format!("  li\t{}, {}", REGISTER_NAMES[dst_reg], int.value()));
-            // self.__update_user(dst_reg, value);
+            codes.push(format!(
+                "  li\t{}, {}",
+                REGISTER_NAMES[dst_reg],
+                int.value()
+            ));
+            self.__update_user(dst_reg, value);
             return (dst_reg, codes);
         }
         // Value already in a register
@@ -289,10 +302,4 @@ impl FuncValueTable {
         self.__update_user(reg, value);
         (reg, codes)
     }
-
-    // /// Frees a register.
-    // fn free_register(&mut self, reg: usize) {
-    //     self.register_user[reg] = None;
-    //     self.register_used_time[reg] = 0;
-    // }
 }
