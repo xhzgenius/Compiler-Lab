@@ -31,6 +31,10 @@ const ARG_SIZE: usize = 4;
 
 const REG_A0: usize = 10;
 
+const REG_SP: usize = 2;
+
+const MAX_SHORT_INT: usize = 1;
+
 #[derive(Debug)]
 pub struct FuncValueTable {
     curr_time: i32,
@@ -88,6 +92,66 @@ impl FuncValueTable {
         codes
     }
 
+    fn store_with_offset(&mut self, reg: usize, offset: usize) -> Vec<String> {
+        let mut codes = vec![];
+        if offset <= MAX_SHORT_INT {
+            codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+        } else {
+            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
+            codes.extend(tmp_reg_codes);
+            codes.push(format!(
+                "  li\t{}, {}\n  add\t{}, {}, sp\n  sw\t{}, 0({})",
+                REGISTER_NAMES[tmp_reg],
+                offset,
+                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[reg],
+                REGISTER_NAMES[tmp_reg]
+            ));
+        }
+        codes
+    }
+    fn load_with_offset(&mut self, reg: usize, offset: usize) -> Vec<String> {
+        let mut codes = vec![];
+        if offset <= MAX_SHORT_INT {
+            codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+        } else {
+            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
+            codes.extend(tmp_reg_codes);
+            codes.push(format!(
+                "  li\t{}, {}\n  add\t{}, {}, sp\n  lw\t{}, 0({})",
+                REGISTER_NAMES[tmp_reg],
+                offset,
+                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[tmp_reg],
+                REGISTER_NAMES[reg],
+                REGISTER_NAMES[tmp_reg]
+            ));
+        }
+        codes
+    }
+    fn add_with_offset(&mut self, reg: usize, offset: usize) -> Vec<String> {
+        let mut codes = vec![];
+        if offset <= MAX_SHORT_INT {
+            codes.push(format!(
+                "  addi\t{}, {}, {}",
+                REGISTER_NAMES[reg], REGISTER_NAMES[reg], offset
+            ));
+        } else {
+            let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
+            codes.extend(tmp_reg_codes);
+            codes.push(format!(
+                "  li\t{}, {}\n  add\t{}, {}, {}",
+                REGISTER_NAMES[tmp_reg],
+                offset,
+                REGISTER_NAMES[reg],
+                REGISTER_NAMES[reg],
+                REGISTER_NAMES[tmp_reg],
+            ));
+        }
+        codes
+    }
+
     /// Kick a value and store it to the stack.
     fn save_register(&mut self, reg: usize) -> Vec<String> {
         let kicked_value = match self.register_user[reg] {
@@ -102,19 +166,7 @@ impl FuncValueTable {
         {
             ValueLocation::Local(offset) => {
                 let offset = offset.clone();
-                if offset <= 2047 {
-                    codes.push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
-                } else {
-                    let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
-                    codes.extend(tmp_reg_codes);
-                    codes.push(format!(
-                        "  li\t{}, {}\n  sw\t{}, 0({})",
-                        REGISTER_NAMES[tmp_reg],
-                        offset,
-                        REGISTER_NAMES[reg],
-                        REGISTER_NAMES[tmp_reg]
-                    ));
-                }
+                codes.extend(self.store_with_offset(reg, offset));
             }
             ValueLocation::Global(symbol_name) => {
                 let symbol_name = symbol_name.clone();
@@ -226,19 +278,7 @@ impl FuncValueTable {
             {
                 ValueLocation::Local(offset) => {
                     let offset = offset.clone();
-                    if offset <= 2047 {
-                        codes.push(format!("  lw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
-                    } else {
-                        let (tmp_reg, tmp_reg_codes) = self.get_tmp_reg();
-                        codes.extend(tmp_reg_codes);
-                        codes.push(format!(
-                            "  li\t{}, {}\n  lw\t{}, 0({})",
-                            REGISTER_NAMES[tmp_reg],
-                            offset,
-                            REGISTER_NAMES[reg],
-                            REGISTER_NAMES[tmp_reg]
-                        ));
-                    }
+                    codes.extend(self.load_with_offset(reg, offset));
                 }
                 ValueLocation::Global(symbol_name) => {
                     let symbol_name = symbol_name.clone();

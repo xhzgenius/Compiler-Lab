@@ -1,48 +1,81 @@
   .data
-var:
+x:
   .word 0
 
   .text
+  .global add
+add:
+  addi	sp, sp, -32
+  sw	ra, 28(sp)
+
+.add_body:
+# Alloc(Alloc)
+# Store(Store { value: Value(1073741824), dest: Value(1073741825) })
+  mv	t0, a0
+# Load(Load { src: Value(1073741825) })
+  mv	t1, t0
+# Binary(Binary { op: Sub, lhs: Value(1073741827), rhs: Value(1073741828) })
+  li	t2, 1
+  sub	t2, t1, t2
+# Call(Call { callee: Function(9), args: [Value(1073741829)] })
+  sw	t0, 0(sp)
+  li	t0, 8
+  add	t0, t0, sp
+  sw	t1, 0(t0)
+  li	t0, 12
+  add	t0, t0, sp
+  sw	t2, 0(t0)
+  li	t0, 12
+  add	t0, t0, sp
+  lw	a0, 0(t0)
+  call	add
+# Load(Load { src: Value(2) })
+  la	t0, x
+  lw	t0, 0(t0)
+  mv	t1, t0
+# Binary(Binary { op: Add, lhs: Value(1073741830), rhs: Value(1073741831) })
+  add	t2, a0, t1
+# Store(Store { value: Value(1073741832), dest: Value(2) })
+  mv	t0, t2
+# Return(Return { value: Some(Value(1073741834)) })
+  li	a0, 1
+  j	.add_ret
+
+.add_ret:
+# Save global variables.
+  la	t3, x
+  sw	t0, 0(t3)
+  lw	ra, 28(sp)
+  li	t0, 32
+  add	sp, sp, t0
+  ret
+
   .global main
 main:
   addi	sp, sp, -32
   sw	ra, 28(sp)
 
 .main_body:
-  j	.bb0_while_start
-
-.bb0_while_start:
-  la	t0, var
-  lw	t0, 0(t0)
+# Alloc(Alloc)
+# Alloc(Alloc)
+# Load(Load { src: Value(1073741836) })
+  lw	t0, 0(sp)
   mv	t1, t0
-  mv	t2, zero
-  xor	t3, t1, zero
-  snez	t3, t3
-  bnez	t3, .bb3_LAnd_if_block
-  j	.bb4_LAnd_if_block_end
-
-.bb1_while_body:
-  j	.bb0_while_start
-
-.bb2_while_end:
-  mv	t4, t0
+# Store(Store { value: Value(1073741838), dest: Value(1073741837) })
+  mv	t2, t1
+# Load(Load { src: Value(1073741837) })
+  mv	t3, t2
+# Binary(Binary { op: Add, lhs: Value(1073741840), rhs: Value(1073741841) })
+  li	t4, 1
+  add	t4, t3, t4
+# Return(Return { value: Some(Value(1073741842)) })
   mv	a0, t4
   j	.main_ret
 
-.bb3_LAnd_if_block:
-  li	t4, 1
-  mv	t2, t4
-  j	.bb4_LAnd_if_block_end
-
-.bb4_LAnd_if_block_end:
-  mv	t4, t2
-  bnez	t4, .bb1_while_body
-  j	.bb2_while_end
-
 .main_ret:
-  la	t5, var
-  sw	t0, 0(t5)
+# Save global variables.
   lw	ra, 28(sp)
-  addi	sp, sp, 32
+  li	t4, 32
+  add	sp, sp, t4
   ret
 

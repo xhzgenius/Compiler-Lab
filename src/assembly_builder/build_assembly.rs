@@ -4,7 +4,7 @@ use std::vec;
 
 use super::{
     FuncValueTable, ValueLocation, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES,
-    REG_A0,
+    REG_A0, REG_SP,
 };
 use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
 
@@ -286,7 +286,7 @@ impl AssemblyBuildable for FunctionData {
             // Generate instructions.
             for &value in node.insts().keys() {
                 let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-                // body_codes.push(format!("# {:?}", value_data.kind()));
+                body_codes.push(format!("# {:?}", value_data.kind()));
                 match value_data.kind() {
                     // Do different things based on instruction kind.
 
@@ -464,8 +464,8 @@ impl AssemblyBuildable for FunctionData {
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
-        // Store back all the global variables in registers. 
-        // epilogue_codes.push(format!("# Save global variables."));
+        // Store back all the global variables in registers.
+        epilogue_codes.push(format!("# Save global variables."));
         for i in 0..REGISTER_NAMES.len() {
             if let Some(value) = my_table.register_user[i] {
                 if value.is_global() {
@@ -481,11 +481,8 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be restored. )
 
         // Restore stack pointer.
-        if stack_frame_size <= 2047 {
-            epilogue_codes.push(format!("  addi\tsp, sp, {}", stack_frame_size));
-        } else {
-            epilogue_codes.push(format!("  li\tt0, {}\n  add\tsp, sp, t0", stack_frame_size));
-        }
+
+        epilogue_codes.extend(my_table.add_with_offset(REG_SP, stack_frame_size));
 
         // Return
         epilogue_codes.push(format!("  ret\n"));

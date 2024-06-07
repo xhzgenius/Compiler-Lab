@@ -1,8 +1,15 @@
-int var = 0;
+int x = 0;
 
-const int one = 1;
+int add(int y) {
+    x = add(y-1)+x;
+    return 1;
+}
 
 int main() {
-  while (var && one) ;
-  return var;
+    int a;
+    int b;
+    b = a;
+    return b+1;
+    add(10);
+    return x;
 }
