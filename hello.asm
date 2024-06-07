@@ -5,7 +5,7 @@ x:
   .text
   .global add
 add:
-  addi	sp, sp, -32
+  addi	sp, sp, 32
   sw	ra, 28(sp)
 
 .add_body:
@@ -19,15 +19,9 @@ add:
   sub	t2, t1, t2
 # Call(Call { callee: Function(9), args: [Value(1073741829)] })
   sw	t0, 0(sp)
-  li	t0, 8
-  add	t0, t0, sp
-  sw	t1, 0(t0)
-  li	t0, 12
-  add	t0, t0, sp
-  sw	t2, 0(t0)
-  li	t0, 12
-  add	t0, t0, sp
-  lw	a0, 0(t0)
+  sw	t1, 8(sp)
+  sw	t2, 12(sp)
+  lw	a0, 12(sp)
   call	add
 # Load(Load { src: Value(2) })
   la	t0, x
@@ -46,36 +40,31 @@ add:
   la	t3, x
   sw	t0, 0(t3)
   lw	ra, 28(sp)
-  li	t0, 32
-  add	sp, sp, t0
+  addi	sp, sp, -32
   ret
 
   .global main
 main:
-  addi	sp, sp, -32
-  sw	ra, 28(sp)
+  addi	sp, sp, 16
+  sw	ra, 12(sp)
 
 .main_body:
-# Alloc(Alloc)
-# Alloc(Alloc)
-# Load(Load { src: Value(1073741836) })
-  lw	t0, 0(sp)
+# Call(Call { callee: Function(9), args: [Value(1073741836)] })
+  li	a0, 10
+  call	add
+# Load(Load { src: Value(2) })
+  la	t0, x
+  lw	t0, 0(t0)
   mv	t1, t0
-# Store(Store { value: Value(1073741838), dest: Value(1073741837) })
-  mv	t2, t1
-# Load(Load { src: Value(1073741837) })
-  mv	t3, t2
-# Binary(Binary { op: Add, lhs: Value(1073741840), rhs: Value(1073741841) })
-  li	t4, 1
-  add	t4, t3, t4
-# Return(Return { value: Some(Value(1073741842)) })
-  mv	a0, t4
+# Return(Return { value: Some(Value(1073741838)) })
+  mv	a0, t1
   j	.main_ret
 
 .main_ret:
 # Save global variables.
-  lw	ra, 28(sp)
-  li	t4, 32
-  add	sp, sp, t4
+  la	t1, x
+  sw	t0, 0(t1)
+  lw	ra, 12(sp)
+  addi	sp, sp, -16
   ret
 

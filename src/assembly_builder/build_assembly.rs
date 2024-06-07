@@ -231,14 +231,7 @@ impl AssemblyBuildable for FunctionData {
         let stack_frame_size = (local_var_size + max_call_arg_size + reg_ra_size + 15) / 16 * 16;
 
         // Change the stack pointer.
-        if stack_frame_size <= 2048 {
-            prologue_codes.push(format!("  addi\tsp, sp, -{}", stack_frame_size));
-        } else {
-            prologue_codes.push(format!(
-                "  li\tt0, -{}\n  add\tsp, sp, t0",
-                stack_frame_size
-            ));
-        }
+        prologue_codes.extend(my_table.add_with_offset(REG_SP, stack_frame_size as isize));
 
         // Push every arg and global vars into the value table.
         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), self.params().len()) {
@@ -482,7 +475,7 @@ impl AssemblyBuildable for FunctionData {
 
         // Restore stack pointer.
 
-        epilogue_codes.extend(my_table.add_with_offset(REG_SP, stack_frame_size));
+        epilogue_codes.extend(my_table.add_with_offset(REG_SP, -(stack_frame_size as isize)));
 
         // Return
         epilogue_codes.push(format!("  ret\n"));
