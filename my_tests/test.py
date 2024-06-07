@@ -211,7 +211,7 @@ def test_dir(dir, test_performance: bool, is_root: bool = True) -> TestResult:
 
             try:
                 compiler_output = subprocess.run(
-                    [args.compiler_path, "-riscv", new_path, "-o", "test/tmp.s"],
+                    [args.compiler_path, "-riscv", new_path, "-o", "my_tests/tmp.s"],
                     capture_output=True,
                     timeout=30)
 
