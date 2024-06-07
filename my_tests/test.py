@@ -12,7 +12,7 @@ which is modified by XHZGenius to run in this repository.
 Usage: 
 
 ```
-python test/test.py target/debug/compiler-lab.exe test/sysyruntimelibrary/libsysy.a test/functional_test -r --compile_only
+python my_tests/test.py target/debug/compiler-lab.exe my_tests/sysyruntimelibrary/libsysy.a my_tests/functional_test -r --compile_only
 ```
 
 """
@@ -46,7 +46,7 @@ logger = logging.getLogger('logger_name')
 
 console_handler = logging.StreamHandler()
 
-file_handler = logging.FileHandler(filename='test/test.log',
+file_handler = logging.FileHandler(filename='my_tests/test.log',
                                    mode='w',
                                    encoding='utf8')
 
@@ -101,7 +101,8 @@ parser.add_argument("--compile_only", action="store_true")
 args = parser.parse_args()
 root_path = args.test_path
 
-output_folder_name = "output"
+output_folder_name = "my_tests/output"
+os.makedirs(output_folder_name, exist_ok=True)
 
 max_stdout = 512
 

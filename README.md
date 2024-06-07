@@ -163,7 +163,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 我从 [https://github.com/segviol/indigo/](https://github.com/segviol/indigo/) 获得了大量的测试样例以及一个测试脚本。用法如下：
 
 ```
-python test/test.py target/debug/compiler-lab.exe test/sysyruntimelibrary/libsysy.a test/functional_test -r --compile_only
+python my_tests/test.py target/debug/compiler-lab.exe my_tests/sysyruntimelibrary/libsysy.a my_tests/functional_test -r --compile_only
 ```
 
 ---
