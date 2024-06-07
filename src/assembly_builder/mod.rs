@@ -33,7 +33,7 @@ const REG_A0: usize = 10;
 
 const REG_SP: usize = 2;
 
-const MAX_SHORT_INT: usize = 1;
+const MAX_SHORT_INT: usize = 2047;
 
 #[derive(Debug)]
 pub struct FuncValueTable {
