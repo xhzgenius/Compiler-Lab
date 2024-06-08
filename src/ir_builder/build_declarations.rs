@@ -174,8 +174,11 @@ fn build_new_aggregate(
                         create_new_local_value(program, my_ir_generator_info).integer(int)
                     }
                 }
-                IRExpBuildResult::Value(v) => {
-                    return Err(format!("Non-constant expression in aggregate initval: {:?}", next_child))
+                IRExpBuildResult::Value(_) => {
+                    return Err(format!(
+                        "Non-constant expression in aggregate initval: {:?}",
+                        next_child
+                    ))
                 }
             };
             elems.push(value);
@@ -226,6 +229,44 @@ fn build_new_aggregate(
             curr_child_idx,
         ))
     }
+}
+
+fn aggregate_to_store_insts(
+    aggr: Value,
+    aggr_ptr: Value,
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> Result<(), String> {
+    assert!(
+        !aggr_ptr.is_global(),
+        "Global aggregate initialization cannot be converted into store instructions! "
+    );
+    let valuedata = get_valuedata(aggr, program, my_ir_generator_info);
+    match valuedata.kind() {
+        koopa::ir::ValueKind::Aggregate(aggr) => {
+            for i in 0..aggr.elems().len() {
+                let index = create_new_local_value(program, my_ir_generator_info).integer(i as i32);
+                let child = aggr.elems()[i];
+                let child_valuedata = get_valuedata(child, program, my_ir_generator_info);
+                let child_ptr = create_new_local_value(program, my_ir_generator_info)
+                    .get_elem_ptr(aggr_ptr, index);
+                insert_local_instructions(program, my_ir_generator_info, [child_ptr]);
+                match child_valuedata.kind() {
+                    koopa::ir::ValueKind::Aggregate(_) => {
+                        aggregate_to_store_insts(child, child_ptr, program, my_ir_generator_info)?;
+                    }
+                    _ => {
+                        let store_inst = create_new_local_value(program, my_ir_generator_info)
+                            .store(child, child_ptr);
+                        insert_local_instructions(program, my_ir_generator_info, [store_inst]);
+                    }
+                }
+            }
+        }
+        _ => panic!("This value must be an aggregate value! "),
+    }
+
+    Ok(())
 }
 
 impl InitVal {
@@ -356,24 +397,34 @@ impl IRBuildable for VarDecl {
                         .set_value_name(var_addr, Some(format!("@{}", ident.content,)));
                     insert_local_instructions(program, my_ir_generator_info, [var_addr]);
                     // Build RHS value (if exists).
-                    if let Some(rhs) = possible_rhs {
+                    let rhs_result = if let Some(rhs) = possible_rhs {
                         let result = rhs.build(&shape, program, my_ir_generator_info)?;
-                        let rhs_value = match result {
-                            IRInitValBuildResult::Const(int) => {
-                                create_new_local_value(program, my_ir_generator_info).integer(int)
+                        match result {
+                            IRInitValBuildResult::Const(int) => Some(
+                                create_new_local_value(program, my_ir_generator_info).integer(int),
+                            ),
+                            IRInitValBuildResult::Var(value) => Some(value),
+                            IRInitValBuildResult::Aggregate(value) => {
+                                // Do not straightly store aggregate initval.
+                                aggregate_to_store_insts(
+                                    value,
+                                    var_addr,
+                                    program,
+                                    my_ir_generator_info,
+                                )?;
+                                None
                             }
-                            IRInitValBuildResult::Var(value) => value,
-                            IRInitValBuildResult::Aggregate(value) => value,
-                        };
-                        // Assign the RHS value into the new variable.
-                        // dbg!(
-                        //     get_valuedata(rhs_value, program, my_ir_generator_info),
-                        //     get_valuedata(var_addr, program, my_ir_generator_info)
-                        // );
+                        }
+                    } else {
+                        None
+                    };
+                    // Assign the RHS value into the new variable (if needed).
+                    if let Some(rhs_value) = rhs_result {
                         let store_inst = create_new_local_value(program, my_ir_generator_info)
                             .store(rhs_value, var_addr);
                         insert_local_instructions(program, my_ir_generator_info, [store_inst]);
                     }
+
                     var_addr
                 }
                 // Or if it's global:
