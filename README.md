@@ -560,7 +560,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 在赋值语句的 `build` 阶段，检查左值是否为地址，如果不是的话返回错误。
 
-###### 增加更多检查与错误信息
+###### 增加更多检查与错误信息（语义分析阶段）
 
 函数调用的参数数量检查/参数类型检查，若不通过则返回错误。
 
@@ -573,6 +573,12 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 常量的定义阶段，初始值出现非常量表达式，返回错误。
 
 函数调用的函数名不在符号表中，或者左值的变量名不在符号表中，返回错误。
+
+数组的声明时，若各维度长度中出现非常量表达式，返回错误。
+
+数组的初始化时，若aggregate对齐错误/出现非常量表达式，返回错误。
+
+`break` 或者 `continue` 语句出现在了错误的位置，返回错误。
 
 ---
 

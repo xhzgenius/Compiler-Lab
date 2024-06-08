@@ -174,7 +174,9 @@ fn build_new_aggregate(
                         create_new_local_value(program, my_ir_generator_info).integer(int)
                     }
                 }
-                IRExpBuildResult::Value(v) => v,
+                IRExpBuildResult::Value(v) => {
+                    return Err(format!("Non-constant expression in aggregate initval: {:?}", next_child))
+                }
             };
             elems.push(value);
         }
@@ -252,48 +254,6 @@ impl InitVal {
                 let (value, _) =
                     build_new_aggregate(shape, childs, is_global, program, my_ir_generator_info)?;
                 Ok(IRInitValBuildResult::Aggregate(value))
-                // let mut elems = vec![];
-                // let mut curr_child_idx = 0;
-                // for i in 0..shape[0] {
-                //     let child_result =
-                //         childs[i].build(&shape[1..], program, my_ir_generator_info)?;
-                //     match child_result {
-                //         IRInitValBuildResult::Const(_) => todo!(),
-                //         IRInitValBuildResult::Var(_) => todo!(),
-                //         IRInitValBuildResult::Aggregate(_) => todo!(),
-                //     }
-                // }
-                // for child_initval in childs {
-                //     match &**child_initval {
-                //         InitVal::Exp(exp) => {
-                //             let value = match exp.build(program, my_ir_generator_info)? {
-                //                 IRExpBuildResult::Const(int) => {
-                //                     create_new_local_value(program, my_ir_generator_info)
-                //                         .integer(int)
-                //                 }
-                //                 IRExpBuildResult::Value(v) => {
-                //                     if is_global {
-                //                         return Err(format!("Non-constant expression '{:?}' in global variable initval: {:?}",
-                //                         exp, self));
-                //                     }
-                //                     v
-                //                 }
-                //             };
-                //         }
-                //         InitVal::Aggregate(_) => {
-                //             todo!()
-                //         }
-                //     }
-                // }
-                // if is_global {
-                //     Ok(IRInitValBuildResult::Aggregate(
-                //         program.new_value().aggregate(elems),
-                //     ))
-                // } else {
-                //     Ok(IRInitValBuildResult::Aggregate(
-                //         create_new_local_value(program, my_ir_generator_info).aggregate(elems),
-                //     ))
-                // }
             }
         }
     }
