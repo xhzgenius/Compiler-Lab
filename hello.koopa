@@ -1,3 +1,5 @@
+global @arr = alloc [[i32, 2], 1], {{1, 2}}
+
 decl @getint(): i32
 
 decl @getch(): i32
@@ -14,47 +16,9 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @fib(%n_param: i32): i32 {
-%0:
-  @n = alloc i32
-  store %n_param, @n
-  %1 = load @n
-  %2 = eq %1, 0
-  br %2, %bb1_if_block_1, %bb0_if_block_end
-
-%bb1_if_block_1:
-  ret 0
-
-%bb0_if_block_end:
-  %3 = load @n
-  %4 = eq %3, 1
-  br %4, %bb3_if_block_1, %bb2_if_block_end
-
-%bb3_if_block_1:
-  ret 1
-
-%bb2_if_block_end:
-  @p = alloc i32
-  %5 = load @n
-  %6 = sub %5, 1
-  store %6, @p
-  @q = alloc i32
-  %7 = load @n
-  %8 = sub %7, 2
-  store %8, @q
-  %9 = load @p
-  %10 = call @fib(%9)
-  %11 = load @q
-  %12 = call @fib(%11)
-  %13 = add %10, %12
-  ret %13
-}
-
 fun @main(): i32 {
-%14:
-  @tmp = alloc i32
-  store 10, @tmp
-  %15 = load @tmp
-  %16 = call @fib(%15)
-  ret %16
+%0:
+  @arr_0 = alloc [[i32, 2], 1]
+  store {{1, 2}}, @arr_0
+  ret
 }

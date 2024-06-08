@@ -9,7 +9,7 @@ use lalrpop_util::lalrpop_mod;
 // 因为我们刚刚创建了 sysy.lalrpop, 所以模块名是 sysy
 lalrpop_mod!(sysy);
 
-fn main() -> std::io::Result<()> {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 解析命令行参数
     let mut args = std::env::args();
     args.next();
@@ -30,7 +30,7 @@ fn main() -> std::io::Result<()> {
     // dbg!("AST:\n{:#?}", &ast);
 
     // Generate in-memory Koopa IR (struct Program) using my IR builder.
-    let ir: koopa::ir::Program = ir_builder::generate_ir(&ast).expect("IR builder error");
+    let ir: koopa::ir::Program = ir_builder::generate_ir(&ast)?;
 
     match mode.as_str() {
         // Convert in-memory Koopa IR to text, and write it to output file (hello.koopa).
@@ -42,15 +42,13 @@ fn main() -> std::io::Result<()> {
         }
         "-riscv" | "-perf" => {
             let mut output_file = std::fs::File::create(output)?;
-            assembly_builder::generate_assembly(&ir, &mut output_file)
-                .expect("Assembly builder error");
+            assembly_builder::generate_assembly(&ir, &mut output_file)?;
             // for assembly_code in assembly_codes {
             //   writeln!(output_file, "{}", assembly_code)?;
             // }
             Ok(())
         }
         mode => Err(mode),
-    }
-    .expect("Wrong mode");
+    }?;
     Ok(())
 }

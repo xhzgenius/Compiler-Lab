@@ -1,7 +1,7 @@
 //! Build a single component into Koopa IR.
 
-use crate::ast_def::declarations::*;
-use koopa::ir::{builder_traits::*, FunctionData, Program, Type};
+use crate::ast_def::{declarations::*, expressions::Exp, symbols::BType};
+use koopa::ir::{builder_traits::*, FunctionData, Program, Type, TypeKind, Value};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
@@ -126,6 +126,66 @@ impl IRBuildable for BlockItem {
     }
 }
 
+pub enum IRInitValBuildResult {
+    Const(i32),
+    Var(Value),
+    Aggregate(Value),
+}
+
+impl InitVal {
+    fn build(
+        &self,
+        shape: &Vec<usize>,
+        program: &mut Program,
+        my_ir_generator_info: &mut MyIRGeneratorInfo,
+    ) -> Result<IRInitValBuildResult, String> {
+        let is_global = my_ir_generator_info.curr_func.is_none();
+        match self {
+            InitVal::Exp(exp) => match exp.build(program, my_ir_generator_info)? {
+                IRExpBuildResult::Const(int) => Ok(IRInitValBuildResult::Const(int)),
+                IRExpBuildResult::Value(value) => {
+                    if is_global {
+                        Err(format!(
+                            "Non-constant expression in global variable initval: {:?}",
+                            self
+                        ))
+                    } else {
+                        Ok(IRInitValBuildResult::Var(value))
+                    }
+                }
+            },
+            InitVal::Aggregate(aggr) => {
+                let mut elems = vec![];
+                for initval in aggr {
+                    let elem = match initval.build(shape, program, my_ir_generator_info)? {
+                        IRInitValBuildResult::Const(int) => {
+                            if is_global {
+                                program.new_value().integer(int)
+                            } else {
+                                create_new_local_value(program, my_ir_generator_info).integer(int)
+                            }
+                        }
+                        IRInitValBuildResult::Var(_) => {
+                            return Err(format!("Aggregate cannot have a variable in it!"))
+                        }
+                        IRInitValBuildResult::Aggregate(value) => value,
+                    };
+                    elems.push(elem);
+                }
+                if is_global {
+                    Ok(IRInitValBuildResult::Aggregate(
+                        program.new_value().aggregate(elems),
+                    ))
+                } else {
+                    Ok(IRInitValBuildResult::Aggregate(
+                        create_new_local_value(program, my_ir_generator_info).aggregate(elems),
+                    ))
+                }
+            }
+        }
+    }
+}
+
 impl IRBuildable for Decl {
     fn build(
         &self,
@@ -148,27 +208,58 @@ impl IRBuildable for ConstDecl {
         let ConstDecl::Default(btype, const_defs) = self;
         let const_type = &btype.content;
         for const_def in const_defs {
-            let ConstDef::Default(ident, shape, rhs) = const_def;
-            let result = rhs.build(program, my_ir_generator_info)?;
+            let ConstDef::Default(ident, shape_exps, rhs) = const_def;
+            let shape = build_shape(shape_exps, program, my_ir_generator_info)?.clone();
+            let result = rhs.build(&shape, program, my_ir_generator_info)?;
             // Add an entry in the symbol table.
             match result {
-                IRExpBuildResult::Const(int) => {
-                    todo!();
+                IRInitValBuildResult::Const(int) => {
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Constant(const_type.clone(), vec![int]),
                     );
                 }
-                IRExpBuildResult::Value(_) => {
+                IRInitValBuildResult::Var(_) => {
                     return Err(format!(
                         "Non-constant expression in constant declaration: {:?}",
                         const_def
                     ))
                 }
+                IRInitValBuildResult::Aggregate(aggr) => {
+                    my_ir_generator_info.symbol_tables.insert(
+                        ident.content.clone(),
+                        SymbolTableEntry::Variable(const_type.clone(), aggr),
+                    );
+                }
             }
         }
         Ok(IRBuildResult::OK)
     }
+}
+
+fn build_shape(
+    shape_exps: &Vec<Exp>,
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> Result<Vec<usize>, String> {
+    let mut result = vec![];
+    for exp in shape_exps {
+        match exp.build(program, my_ir_generator_info)? {
+            IRExpBuildResult::Const(int) => result.push(int as usize),
+            IRExpBuildResult::Value(_) => {
+                return Err(format!("The shape of array must be constant! "))
+            }
+        }
+    }
+    Ok(result.clone())
+}
+
+fn get_array_type(btype: &BType, shape: &[usize]) -> TypeKind {
+    if shape.is_empty() {
+        return btype.content.clone();
+    }
+    let inner_typekind = get_array_type(btype, &shape[1..]);
+    TypeKind::Array(Type::get(inner_typekind), shape[0])
 }
 
 impl IRBuildable for VarDecl {
@@ -178,11 +269,14 @@ impl IRBuildable for VarDecl {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRBuildResult, String> {
         let VarDecl::Default(btype, var_defs) = self;
-        let var_type = &btype.content;
 
         for var_def in var_defs {
-            let VarDef::Default(ident, shape, possible_rhs) = var_def;
-            todo!();
+            let VarDef::Default(ident, shape_exps, possible_rhs) = var_def;
+            let shape = build_shape(shape_exps, program, my_ir_generator_info)?;
+            let var_type = match shape.is_empty() {
+                true => btype.content.clone(),
+                false => get_array_type(btype, &shape),
+            };
 
             // Allocate the new variable and get its Koopa IR Value.
             let final_var_ptr = match my_ir_generator_info.curr_func {
@@ -198,12 +292,13 @@ impl IRBuildable for VarDecl {
                     insert_local_instructions(program, my_ir_generator_info, [var_ptr]);
                     if let Some(rhs) = possible_rhs {
                         // Build RHS value (if exists).
-                        let result = rhs.build(program, my_ir_generator_info)?;
+                        let result = rhs.build(&shape, program, my_ir_generator_info)?;
                         let rhs_value = match result {
-                            IRExpBuildResult::Const(int) => {
+                            IRInitValBuildResult::Const(int) => {
                                 create_new_local_value(program, my_ir_generator_info).integer(int)
                             }
-                            IRExpBuildResult::Value(value) => value,
+                            IRInitValBuildResult::Var(value) => value,
+                            IRInitValBuildResult::Aggregate(value) => value,
                         };
                         // Assign the RHS value into the new variable.
                         let store_inst = create_new_local_value(program, my_ir_generator_info)
@@ -222,12 +317,15 @@ impl IRBuildable for VarDecl {
                         ));
                     }
                     let var_ptr = match possible_rhs {
-                        Some(rhs) => match rhs.build(program, my_ir_generator_info)? {
-                            IRExpBuildResult::Const(int) => {
+                        Some(rhs) => match rhs.build(&shape, program, my_ir_generator_info)? {
+                            IRInitValBuildResult::Const(int) => {
                                 let int_init = program.new_value().integer(int);
                                 program.new_value().global_alloc(int_init)
                             }
-                            IRExpBuildResult::Value(val) => program.new_value().global_alloc(val),
+                            IRInitValBuildResult::Var(val) => program.new_value().global_alloc(val),
+                            IRInitValBuildResult::Aggregate(val) => {
+                                program.new_value().global_alloc(val)
+                            }
                         },
                         None => {
                             let zero_init =

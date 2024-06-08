@@ -1,19 +1,11 @@
-int data;
 
-int fib(int n) {
-	if (n == 0)
-		return 0;
-	if (n == 1)
-		return 1;
-	int p;
-	p = n - 1;
-	int q;
-	q = n - 2;
-	return fib(p) + fib(q);
-}
+// int arr[2] = {1, 2};
+int arr[1+0][2] = {{1, 2}};
+const int brr[2][1] = {{114}, {514}};
 
 int main() {
-	int tmp;
-	tmp = 10;
-	return fib(tmp);
+//   int arr[2][3] = {1, 2};
+	int arr[-1+2][2] = {{1, 2}};
+//   int arr[2][3];
+//   return arr[0][2];
 }

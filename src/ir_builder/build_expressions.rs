@@ -22,19 +22,6 @@ pub trait IRExpBuildable {
     ) -> Result<IRExpBuildResult, String>;
 }
 
-impl IRExpBuildable for InitVal {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRExpBuildResult, String> {
-        match self {
-            InitVal::Exp(exp) => exp.build(program, my_ir_generator_info),
-            InitVal::Aggregate(aggr) => todo!(),
-        }
-    }
-}
-
 impl IRExpBuildable for Exp {
     fn build(
         &self,
@@ -448,7 +435,7 @@ impl IRExpBuildable for UnaryExp {
                 my_ir_generator_info,
                 koopa::ir::BinaryOp::Eq,
             ),
-            UnaryExp::FuncCall(func_id, params) => {
+            UnaryExp::FuncCall(func_id, param_exps) => {
                 let func = match my_ir_generator_info
                     .function_table
                     .get(&func_id.content)
@@ -457,14 +444,35 @@ impl IRExpBuildable for UnaryExp {
                     Some(f) => Ok(f),
                     None => Err(format!("Function {} not found!", &func_id.content)),
                 }?;
+                let func_decl_params = program.func(func).params().to_owned();
+                if param_exps.len() != func_decl_params.len() {
+                    return Err(format!(
+                        "The parameter number of function '{}' is incorrect!",
+                        &func_id.content
+                    ));
+                }
                 let mut real_params = vec![];
-                for param in params {
-                    real_params.push(match param.build(program, my_ir_generator_info)? {
+                for i in 0..param_exps.len() {
+                    let real_param = match param_exps[i].build(program, my_ir_generator_info)? {
                         IRExpBuildResult::Const(int) => {
                             create_new_local_value(program, my_ir_generator_info).integer(int)
                         }
                         IRExpBuildResult::Value(v) => v,
-                    })
+                    };
+                    // Here the real_param can only be local.
+                    if program
+                        .func(my_ir_generator_info.curr_func.unwrap())
+                        .dfg()
+                        .value(real_param)
+                        .ty()
+                        != program.func(func).dfg().value(func_decl_params[i]).ty()
+                    {
+                        return Err(format!(
+                            "The parameter type of function '{}' is incorrect!",
+                            &func_id.content
+                        ));
+                    }
+                    real_params.push(real_param);
                 }
                 let call_inst = create_new_local_value(program, my_ir_generator_info)
                     .call(func.clone(), real_params);
@@ -508,9 +516,15 @@ impl IRExpBuildable for LVal {
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRExpBuildResult, String> {
         let LVal::Default(ident, indexes) = self;
-        todo!();
         match my_ir_generator_info.symbol_tables.get(&ident.content) {
-            Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRExpBuildResult::Value(*ptr)),
+            Some(SymbolTableEntry::Variable(_lval_type, ptr)) => {
+                if indexes.is_empty() { // A common variable
+                    Ok(IRExpBuildResult::Value(*ptr))
+                } else { // An array. Requires ptr to be a pointer.
+                    dbg!(_lval_type.to_string(), ptr);
+                    todo!()
+                }
+            }
             Some(SymbolTableEntry::Constant(_lval_type, values)) => {
                 Ok(IRExpBuildResult::Const(values[0]))
             }

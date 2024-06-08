@@ -27,6 +27,12 @@ pub enum BlockItem {
 }
 
 #[derive(Debug)]
+pub enum InitVal {
+    Exp(Exp),
+    Aggregate(Vec<Box<InitVal>>),
+}
+
+#[derive(Debug)]
 pub enum Decl {
     ConstDecl(ConstDecl),
     VarDecl(VarDecl),

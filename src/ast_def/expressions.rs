@@ -4,12 +4,6 @@
 use super::symbols::*;
 
 #[derive(Debug)]
-pub enum InitVal {
-    Exp(Exp),
-    Aggregate(Vec<Box<InitVal>>),
-}
-
-#[derive(Debug)]
 pub enum Exp {
     LOrExp(LOrExp),
 }

@@ -20,14 +20,14 @@
 //!
 //! ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
 //! ConstDef      ::= IDENT {"[" Exp "]"} "=" InitVal;
-//!                 // Exps and InitVal should be const. Checked at grammar level.
+//!                 // Exps and InitVal should be const. Checked at semantic level.
 //!
 //! VarDecl       ::= BType VarDef {"," VarDef} ";";
 //! VarDef        ::= IDENT {"[" Exp "]"}
 //!                 | IDENT {"[" Exp "]"} "=" InitVal;
 //!                 // If this VarDef is global, InitVal should be const.
-//!                 // Exps in indexes should be const. Checked at grammar level.
-//!                 // This check is done in grammar analysis, not in syntax analysis.
+//!                 // Exps in indexes should be const. Checked at semantic level.
+//!                 // This check is done in semantic analysis, not in syntax analysis.
 //!
 //! ======================================================
 //! Statements
@@ -54,7 +54,7 @@
 //! InitVal       ::= Exp
 //!                 | "{" "}"
 //!                 | "{" InitVal {"," InitVal} "}";
-//!                 // The check of "whether an exp is const" is done in grammar analysis.
+//!                 // The check of "whether an exp is const" is done in semantic analysis.
 //!
 //! Exp         ::= LOrExp;
 //!
