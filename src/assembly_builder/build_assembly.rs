@@ -3,8 +3,7 @@
 use std::vec;
 
 use super::{
-    FuncValueTable, ValueLocation, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES,
-    REG_A0, REG_SP,
+    MyBBValueTable, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES, REG_A0, REG_SP,
 };
 use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
 
@@ -161,18 +160,6 @@ fn binary_op_to_assembly(
     }
 }
 
-fn store_global_variables(my_table: &mut FuncValueTable) -> Vec<String> {
-    let mut codes = vec![format!("# Save global variables.")];
-    for i in 0..REGISTER_NAMES.len() {
-        if let Some(value) = my_table.register_user[i] {
-            if value.is_global() {
-                codes.extend(my_table.save_register(i));
-            }
-        }
-    }
-    codes
-}
-
 impl AssemblyBuildable for ValueData {
     /// Used to handle global variable declarations.
     /// The ValueData's kind should be GlobalAlloc. Or it will panic.
@@ -208,17 +195,31 @@ impl AssemblyBuildable for FunctionData {
         prologue_codes.push(format!("{}:", &self.name()[1..]));
 
         // Clear register usages when entering the function.
-        let mut my_table = FuncValueTable::new(program, self);
+        let mut my_table = MyBBValueTable::new(program, self);
 
         // In my compiler, every defined local variable (like "@y = alloc i32")
         // and temp values has its place in memory.
         // The registers work like a LRU cache.
 
-        let mut max_call_arg_size = 0; // Bytes for storing all call args.
+        // Calculate the stack frame size.
         let reg_ra_size = 4; // Bytes for storing register ra's value.
+        let mut local_var_size = 0; // Bytes for storing local variables.
+        for &value in self.dfg().values().keys() {
+            if value.is_global() || my_table.is_temp_value(value) {
+                continue;
+            }
+            local_var_size += self.dfg().value(value).ty().size();
+        }
+        let mut max_call_arg_size = 0; // Bytes for storing all call args.
+        let mut max_temp_var_size = 0; // Bytes for storing temp values.
         for (&_block, node) in self.layout().bbs() {
+            let mut temp_var_size = 0;
             for &value in node.insts().keys() {
-                if let ValueKind::Call(call) = self.dfg().value(value).kind() {
+                if !my_table.is_temp_value(value) {
+                    continue;
+                }
+                let value_data = self.dfg().value(value);
+                if let ValueKind::Call(call) = value_data.kind() {
                     let mut arg_size = 0;
                     if call.args().len() > REGISTER_FOR_ARGS.len() {
                         for &_arg in &call.args()[REGISTER_FOR_ARGS.len()..] {
@@ -227,40 +228,42 @@ impl AssemblyBuildable for FunctionData {
                     }
                     max_call_arg_size = std::cmp::max(arg_size, max_call_arg_size);
                 }
+                temp_var_size += value_data.ty().size();
             }
+            max_temp_var_size = std::cmp::max(max_temp_var_size, temp_var_size);
         }
-        let mut local_var_size: usize = 0; // Bytes for storing all local variables.
-        for &value in self.dfg().values().keys() {
-            let value_data = self.dfg().value(value); // A value in Koopa IR is an instruction.
-            my_table.value_location.insert(
-                value,
-                ValueLocation::Local(local_var_size + max_call_arg_size),
-            );
-            local_var_size += value_data.ty().size();
-        }
-        let stack_frame_size = (local_var_size + max_call_arg_size + reg_ra_size + 15) / 16 * 16;
+
+        let stack_frame_size =
+            (reg_ra_size + max_temp_var_size + local_var_size + max_call_arg_size + 15) / 16 * 16;
 
         // Change the stack pointer.
         prologue_codes.extend(my_table.add_with_offset(REG_SP, -(stack_frame_size as isize)));
 
-        // Push every arg and global vars into the value table.
+        // Push every arg's location into the value table.
         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), self.params().len()) {
             my_table.register_user[REGISTER_FOR_ARGS[i]] = Some(self.params()[i]);
         }
         for i in REGISTER_FOR_ARGS.len()..self.params().len() {
-            my_table.value_location.insert(
+            my_table.local_value_location.insert(
                 self.params()[i],
-                ValueLocation::Local((i - REGISTER_FOR_ARGS.len()) * ARG_SIZE + stack_frame_size),
+                (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE + stack_frame_size,
             );
         }
-        for &global in program.inst_layout() {
-            my_table.value_location.insert(
-                global,
-                ValueLocation::Global(
-                    program.borrow_value(global).name().clone().unwrap()[1..].to_string(),
-                ),
-            );
+
+        // Push every local variable into the value table.
+        let mut curr_offset = max_call_arg_size;
+        for &value in self.dfg().values().keys() {
+            if value.is_global() || my_table.is_temp_value(value) {
+                continue;
+            }
+            my_table.local_value_location.insert(value, curr_offset);
+            curr_offset += self.dfg().value(value).ty().size();
         }
+        assert_eq!(
+            curr_offset,
+            max_call_arg_size + local_var_size,
+            "Inconsistent offset!"
+        );
 
         // Save callee-saved registers.
         // (Currently no callee-saved registers need to be saved. )
@@ -274,6 +277,20 @@ impl AssemblyBuildable for FunctionData {
         // dbg!(&self.name(), &my_table);
 
         for (&block, node) in self.layout().bbs() {
+            // Insert every temp values into the value table.
+            let mut curr_offset = max_call_arg_size + local_var_size;
+            for &value in node.insts().keys() {
+                if !my_table.is_temp_value(value) {
+                    continue;
+                }
+                my_table.local_value_location.insert(value, curr_offset);
+                curr_offset += self.dfg().value(value).ty().size();
+            }
+            assert!(
+                curr_offset <= max_call_arg_size + local_var_size + max_temp_var_size,
+                "Inconsistent offset!"
+            );
+
             // At the beginning of the BasicBlock, declare its name.
             let possible_bb_name = self
                 .dfg()
@@ -299,40 +316,32 @@ impl AssemblyBuildable for FunctionData {
                         // Does it have a return value?
                         match return_inst.value() {
                             Some(return_value) => {
-                                let (reg, codes) = my_table.want_to_visit_value(
-                                    return_value,
-                                    program,
-                                    self,
-                                    true,
-                                    Some(REG_A0),
-                                );
+                                let (reg, codes) =
+                                    my_table.want_to_visit_value(return_value, true, Some(REG_A0));
                                 assert_eq!(reg, REG_A0, "WTF??! I asked to load into reg a0!!!");
                                 body_codes.extend(codes);
+                                my_table.remove_temp_value(return_value);
                             }
                             None => {}
                         }
+                        // At the end of the basic block, store all global and local variables into memory.
+                        body_codes.extend(my_table.store_global_variables());
+                        body_codes.extend(my_table.store_local_variables());
                         // Jump to the return part.
                         body_codes.push(format!("  j\t.{}_ret", &self.name()[1..]));
                     }
 
                     // Binary operation
                     koopa::ir::ValueKind::Binary(binary) => {
-                        let (reg1, codes1) =
-                            my_table.want_to_visit_value(binary.lhs(), program, self, true, None);
-                        let (reg2, codes2) =
-                            my_table.want_to_visit_value(binary.rhs(), program, self, true, None);
+                        let (reg1, codes1) = my_table.want_to_visit_value(binary.lhs(), true, None);
+                        let (reg2, codes2) = my_table.want_to_visit_value(binary.rhs(), true, None);
                         body_codes.extend(codes1);
                         body_codes.extend(codes2);
-                        let (reg_ans, codes) =
-                            my_table.want_to_visit_value(value, program, self, false, None);
+                        my_table.remove_temp_value(binary.lhs());
+                        my_table.remove_temp_value(binary.rhs());
+                        let (reg_ans, codes) = my_table.want_to_visit_value(value, false, None);
                         body_codes.extend(codes);
                         body_codes.push(binary_op_to_assembly(binary, reg_ans, reg1, reg2));
-
-                        // If the result is useless, free the register.
-                        // 我真是他妈天才！但是只天才了一半
-                        // if self.dfg().value(value).used_by().is_empty() {
-                        //     my_table.free_register(reg_ans);
-                        // }
                     }
 
                     // Alloc operation
@@ -340,26 +349,20 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        body_codes.extend(my_table.assign_v1_to_v2(
-                            store.value(),
-                            store.dest(),
-                            program,
-                            self,
-                        ));
+                        body_codes.extend(my_table.assign_v1_to_v2(store.value(), store.dest()));
+                        my_table.remove_temp_value(store.value());
                     }
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        body_codes.extend(my_table.assign_v1_to_v2(
-                            load.src(),
-                            value,
-                            program,
-                            self,
-                        ));
+                        body_codes.extend(my_table.assign_v1_to_v2(load.src(), value));
                     }
 
                     // Jump operation
                     koopa::ir::ValueKind::Jump(jump) => {
+                        // At the end of the basic block, store all global and local variables into memory.
+                        body_codes.extend(my_table.store_global_variables());
+                        body_codes.extend(my_table.store_local_variables());
                         body_codes.push(format!(
                             "  j\t.{}",
                             &self
@@ -377,8 +380,12 @@ impl AssemblyBuildable for FunctionData {
                     // Branch operation
                     koopa::ir::ValueKind::Branch(branch) => {
                         let (cond_reg, codes) =
-                            my_table.want_to_visit_value(branch.cond(), program, self, true, None);
+                            my_table.want_to_visit_value(branch.cond(), true, None);
                         body_codes.extend(codes);
+                        my_table.remove_temp_value(branch.cond());
+                        // At the end of the basic block, store all global and local variables into memory.
+                        body_codes.extend(my_table.store_global_variables());
+                        body_codes.extend(my_table.store_local_variables());
                         body_codes.push(format!(
                             "  bnez\t{}, .{}",
                             REGISTER_NAMES[cond_reg],
@@ -411,8 +418,6 @@ impl AssemblyBuildable for FunctionData {
                         for i in 0..std::cmp::min(REGISTER_FOR_ARGS.len(), call.args().len()) {
                             let (reg, codes) = my_table.want_to_visit_value(
                                 call.args()[i],
-                                program,
-                                self,
                                 true,
                                 Some(REGISTER_FOR_ARGS[i]),
                             );
@@ -421,19 +426,16 @@ impl AssemblyBuildable for FunctionData {
                                 "WTF??! I asked to load into this reg!!!"
                             );
                             body_codes.extend(codes);
+                            my_table.remove_temp_value(call.args()[i]);
                         }
                         for i in REGISTER_FOR_ARGS.len()..call.args().len() {
-                            let (reg, codes) = my_table.want_to_visit_value(
-                                call.args()[i],
-                                program,
-                                self,
-                                true,
-                                None,
-                            );
+                            let (reg, codes) =
+                                my_table.want_to_visit_value(call.args()[i], true, None);
                             body_codes.extend(codes);
                             let offset = (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE;
                             body_codes
                                 .push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                            my_table.remove_temp_value(call.args()[i]);
                         }
 
                         // Save caller-saved registers.
@@ -442,7 +444,7 @@ impl AssemblyBuildable for FunctionData {
                         }
 
                         // Store back all the global variables in registers.
-                        body_codes.extend(store_global_variables(&mut my_table));
+                        body_codes.extend(my_table.store_global_variables());
 
                         // Call the function.
                         body_codes.push(format!(
@@ -451,9 +453,9 @@ impl AssemblyBuildable for FunctionData {
                         ));
 
                         // Now the returned value is in register a0.
-                        // Insert it into the register table.
-                        my_table.register_user[REG_A0] = Some(value);
-                        my_table.register_used_time[REG_A0] = my_table.curr_time;
+                        let (reg, codes) = my_table.want_to_visit_value(value, false, None);
+                        body_codes.push(format!("  mv\t{}, a0", REGISTER_NAMES[reg]));
+                        body_codes.extend(codes);
                     }
 
                     // Other instructions (TODO: Not implemented)
@@ -470,9 +472,6 @@ impl AssemblyBuildable for FunctionData {
         // Function epilogue.
         let mut epilogue_codes = vec![];
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
-
-        // Store back all the global variables in registers.
-        epilogue_codes.extend(store_global_variables(&mut my_table));
 
         // Restore registar ra. (Return address)
         epilogue_codes.push(format!("  lw\tra, {}(sp)", stack_frame_size - reg_ra_size));

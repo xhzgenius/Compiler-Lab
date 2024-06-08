@@ -7,10 +7,34 @@
 ##### 挂载目录到容器：
 
 ```
-docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev bash
+docker run -it -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev
 ```
 
-##### 运行编译器：
+然后可以用 VS Code 左下角的“打开远程窗口”，选择“Attach to a running container”，即可在 VS Code 图形界面访问容器，并方便地进行测试。
+
+容器内的测试方法：
+
+```
+./autotest [-koopa|-riscv|-perf] [-t TEST_CASE_DIR] [-w WORKING_DIR] REPO_DIR
+```
+
+参数: 
+
+* `-koopa|-riscv|-perf`: 可选, 指定对编译器进行何种测试, 可为 Koopa IR 测试 (`-koopa`), RISC-V 测试 (`-riscv`) 和性能测试 (`-perf`). 默认为 `-koopa`.
+* `-t TEST_CASE_DIR`: 可选, 指定测试用例目录, 目录内须包含若干 `.c`/`.sy` 文件 (也可位于子目录中). 其中, 每个 `.c`/`.sy` 文件应当有一个位于相同目录中且同名的 `.out` 文件, 对应该 SysY 程序的预期输出/返回值; 每个 `.c`/`.sy` 文件还可以有一个位于相同目录中且同名的 `.in` 文件, 对应该 SysY 程序的输入, 如果程序不会从 `stdin` 读取输入, 则该文件应该省略. (参考[开放测试用例](https://github.com/pku-minic/open-test-cases)的写法). 默认为脚本目录下的 `testcases` 目录.
+* `-w WORKING_DIR`: 可选, 指定工作目录. 脚本会把编译生成的文件以及其他各类文件存入工作目录, 而默认情况下, 工作目录是一个临时目录, 脚本运行结束后会将其删除. 如果你不想每次都让脚本重新编译你的项目, 而是需要增量编译, 你可以指定一个工作目录, 此时脚本退出前不会删除这个目录.
+* `-s WORKING_DIR`: 可选, 指定运行测试用例目录下的子目录中的测试用例.
+* `REPO_DIR`: 必选, 指定编译器仓库的目录. 目录内须包含 `Makefile`/`CMakeLists.txt`/`Cargo.toml` 文件之一, 脚本将自动使用 `make`/`CMake`/`Cargo` 构建编译器, 并对其进行测试.
+
+本人使用自定义的测试样例（位于 `Compiler-Lab-Test-Suites` 目录中，且只希望运行其中 `functional_test` 子目录的测试样例），测试命令如下：
+
+```
+autotest -riscv -t Compiler-Lab-Test-Suites -s functional_test /root/compiler >log.txt 2>&1 &
+```
+
+`>log.txt 2>&1 &` 代表将标准输出与标准错误结果重定向到 `log.txt` ，且后台运行。但是如果某个样例测试超时，后面的样例还是会输出到命令行，这可能是bug。
+
+##### 在本地运行编译器：
 
 ```bash
 cargo run -- -koopa hello.c -o hello.koopa
@@ -160,11 +184,9 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv3 /root/compiler
 ```
 
-我从 [https://github.com/segviol/indigo/](https://github.com/segviol/indigo/) 获得了大量的测试样例以及一个测试脚本。用法如下：
+我从 [https://github.com/segviol/indigo/](https://github.com/segviol/indigo/) 获得了大量的测试样例以及一个测试脚本。
 
-```
-python my_tests/test.py target/debug/compiler-lab.exe my_tests/sysyruntimelibrary/libsysy.a my_tests/functional_test -r --compile_only
-```
+用法写在 `test.py` 开头注释。
 
 ---
 
@@ -486,9 +508,17 @@ decl @stoptime()
 
 有的时候源代码里没有 `return` 语句，要手动补上。
 
-目前所有的 `load` 和 `store` 指令全都是直接对内存操作的。将来得优化成 LRU cache 形式。
+使用自己的测试样例，定位到已知错误：寄存器分配有问题。
 
-啊？还真是寄存器分配有bug。我把整个寄存器分配的结构体重新封装之后，拿到12/12分数。
+比如：我在 if 的一个分支没有给 value @a 分配寄存器，另一个分支为 @a 分配了寄存器 t5，if 结尾的时候就会取出 t5 的值作为 @a 的值，这是错误的。
+
+##### 重新思考寄存器分配，以及写策略
+
+Koopa IR 中，变量分为两类：一类是定义的变量（包括全局变量），以 @ 开头，每次使用必定伴随 load 和 store ；另一类是临时变量，以 % 开头，会被唯一赋值/使用一次。如果把两类统一用 LRU Cache 来保存，就会出现上述的不同条件分支中 Cache 位置不同的错误。
+
+解决办法：在出基本块时，保存所有的定义变量。
+
+对于临时变量，用完就从表里删除。
 
 ##### 本地测试
 
@@ -503,6 +533,8 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv8 /root/compiler
 ```
+
+
 
 ---
 

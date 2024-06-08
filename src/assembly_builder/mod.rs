@@ -40,30 +40,24 @@ const REG_X31: usize = 31;
 const MAX_SHORT_INT: isize = 2047;
 const MIN_SHORT_INT: isize = -2048;
 
-pub struct FuncValueTable<'a> {
+pub struct MyBBValueTable<'a> {
     program: &'a Program,
     fd: &'a FunctionData,
     curr_time: i32,
     register_user: [Option<Value>; 32],
     register_used_time: [i32; 32], // LRU registers
-    value_location: HashMap<Value, ValueLocation>,
+    local_value_location: HashMap<Value, usize>,
 }
 
-#[derive(Debug)]
-pub enum ValueLocation {
-    Local(usize),
-    Global(String),
-}
-
-impl FuncValueTable<'_> {
-    fn new<'a>(program: &'a Program, fd: &'a FunctionData) -> FuncValueTable<'a> {
-        FuncValueTable {
+impl MyBBValueTable<'_> {
+    fn new<'a>(program: &'a Program, fd: &'a FunctionData) -> MyBBValueTable<'a> {
+        MyBBValueTable {
             program,
             fd,
             curr_time: 0,
             register_user: [None; 32],
             register_used_time: [0; 32],
-            value_location: HashMap::new(),
+            local_value_location: HashMap::new(),
         }
     }
 
@@ -91,16 +85,35 @@ impl FuncValueTable<'_> {
         None
     }
 
-    fn assign_v1_to_v2(
-        &mut self,
-        v1: Value,
-        v2: Value,
-        program: &Program,
-        fd: &FunctionData,
-    ) -> Vec<String> {
+    fn is_temp_value(&self, value: Value) -> bool {
+        let value_data = match value.is_global() {
+            true => self.program.borrow_value(value).clone(),
+            false => self.fd.dfg().value(value).clone(),
+        };
+        match value_data.name() {
+            Some(name) => name.starts_with("%"),
+            None => true,
+        }
+    }
+
+    fn remove_temp_value(&mut self, value: Value) {
+        // assert!(
+        //     self.is_temp_value(value),
+        //     "Can only remove temp values in table!"
+        // );
+        if !self.is_temp_value(value) {
+            return;
+        }
+        if let Some(reg) = self.__is_value_in_register(value) {
+            self.__free_user(reg);
+        }
+        self.local_value_location.remove(&value);
+    }
+
+    fn assign_v1_to_v2(&mut self, v1: Value, v2: Value) -> Vec<String> {
         let mut codes = vec![];
-        let (reg1, codes1) = self.want_to_visit_value(v1, program, fd, true, None);
-        let (reg2, codes2) = self.want_to_visit_value(v2, program, fd, false, None);
+        let (reg1, codes1) = self.want_to_visit_value(v1, true, None);
+        let (reg2, codes2) = self.want_to_visit_value(v2, false, None);
         codes.extend(codes1);
         codes.extend(codes2);
         codes.push(format!(
@@ -176,33 +189,65 @@ impl FuncValueTable<'_> {
         )]
     }
 
-    /// Kick a value and store it to the stack.
+    fn store_global_variables(&mut self) -> Vec<String> {
+        let mut codes = vec![format!("# Save global variables.")];
+        for i in 0..REGISTER_NAMES.len() {
+            if let Some(value) = self.register_user[i] {
+                if value.is_global() {
+                    codes.extend(self.save_register(i));
+                }
+            }
+        }
+        codes
+    }
+
+    fn store_local_variables(&mut self) -> Vec<String> {
+        let mut codes = vec![format!("# Save local variables.")];
+        for i in 0..REGISTER_NAMES.len() {
+            if let Some(value) = self.register_user[i] {
+                if value.is_global() || self.is_temp_value(value) {
+                    continue;
+                }
+                codes.extend(self.save_register(i));
+            }
+        }
+        codes
+    }
+
+    /// Kick the value in a register and store it to memory.
     fn save_register(&mut self, reg: usize) -> Vec<String> {
         let kicked_value = match self.register_user[reg] {
             Some(value) => value,
             None => return vec![],
         };
-        let mut codes = vec![];
-        let value_kind = match kicked_value.is_global() {
-            true => self.program.borrow_value(kicked_value).kind().clone(),
-            false => self.fd.dfg().value(kicked_value).kind().clone(),
+        let value_data = match kicked_value.is_global() {
+            true => self.program.borrow_value(kicked_value).clone(),
+            false => self.fd.dfg().value(kicked_value).clone(),
         };
-        if !value_kind.is_const() {
-            match self
-                .value_location
-                .get(&kicked_value)
-                .expect("Can't find kicked value in table. Seems impossible. ")
-            {
-                ValueLocation::Local(offset) => {
-                    let offset = offset.clone();
-                    codes.extend(self.store_with_offset(reg, offset as isize));
-                }
-                ValueLocation::Global(symbol_name) => {
-                    let symbol_name = symbol_name.clone();
-                    codes.extend(self.store_global(reg, symbol_name));
-                }
-            }
+        let mut codes = vec![];
+        // Store the value into memory.
+        // Global value
+        if kicked_value.is_global() {
+            codes.extend(
+                self.store_global(reg, value_data.name().clone().unwrap()[1..].to_string()),
+            );
         }
+        // Local or temp value
+        else {
+            codes.extend(
+                self.store_with_offset(
+                    reg,
+                    *self.local_value_location.get(&kicked_value).expect(
+                        format!(
+                            "Cannot find local or temp value {:?} in table! Impossible.",
+                            value_data
+                        )
+                        .as_str(),
+                    ) as isize,
+                ),
+            );
+        }
+
         self.__free_user(reg);
         codes
     }
@@ -232,17 +277,15 @@ impl FuncValueTable<'_> {
     fn want_to_visit_value(
         &mut self,
         value: Value,
-        program: &Program,
-        fd: &FunctionData,
         do_load: bool,
         use_certain_reg: Option<usize>,
     ) -> (usize, Vec<String>) {
         self.curr_time += 1;
-        let value_kind = match value.is_global() {
-            true => program.borrow_value(value).kind().clone(),
-            false => fd.dfg().value(value).kind().clone(),
+        let value_data = match value.is_global() {
+            true => self.program.borrow_value(value).clone(),
+            false => self.fd.dfg().value(value).clone(),
         };
-        if let koopa::ir::ValueKind::Integer(int) = value_kind {
+        if let koopa::ir::ValueKind::Integer(int) = value_data.kind() {
             // Allocate a new register for the Integer.
             // I don't want to use assembly codes like addi because I am lazy.
             let (dst_reg, mut codes) = match use_certain_reg {
@@ -284,18 +327,25 @@ impl FuncValueTable<'_> {
             None => self.get_tmp_reg(),
         };
         if do_load {
-            match self
-                .value_location
-                .get(&value)
-                .expect("Can't find wanted-to-visit value in table. ")
-            {
-                ValueLocation::Local(offset) => {
-                    let offset = offset.clone();
-                    codes.extend(self.load_with_offset(reg, offset as isize));
+            match value.is_global() {
+                true => {
+                    codes.extend(
+                        self.load_global(reg, value_data.name().clone().unwrap()[1..].to_string()),
+                    );
                 }
-                ValueLocation::Global(symbol_name) => {
-                    let symbol_name = symbol_name.clone();
-                    codes.extend(self.load_global(reg, symbol_name));
+                false => {
+                    let offset = self
+                        .local_value_location
+                        .get(&value)
+                        .expect(
+                            format!(
+                                "Cannot find local or temp value {:?} in table! Impossible.",
+                                value_data
+                            )
+                            .as_str(),
+                        )
+                        .clone();
+                    codes.extend(self.load_with_offset(reg, offset as isize));
                 }
             }
         }

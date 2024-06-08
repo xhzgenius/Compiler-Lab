@@ -1,21 +1,3 @@
-global @a = alloc i32, zeroinit
-global @b = alloc i32, zeroinit
-global @c = alloc i32, zeroinit
-global @d = alloc i32, zeroinit
-global @e = alloc i32, zeroinit
-global @f = alloc i32, zeroinit
-global @g = alloc i32, zeroinit
-global @h = alloc i32, zeroinit
-global @i = alloc i32, zeroinit
-global @j = alloc i32, zeroinit
-global @k = alloc i32, zeroinit
-global @l = alloc i32, zeroinit
-global @m = alloc i32, zeroinit
-global @n = alloc i32, zeroinit
-global @o = alloc i32, zeroinit
-global @p = alloc i32, zeroinit
-global @q = alloc i32, zeroinit
-
 decl @getint(): i32
 
 decl @getch(): i32
@@ -32,72 +14,47 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @func(%x1_param: i32, %x2_param: i32, %x3_param: i32, %x4_param: i32, %x5_param: i32, %x6_param: i32, %x7_param: i32, %x8_param: i32, %x9_param: i32, %x10_param: i32, %x11_param: i32, %x12_param: i32): i32 {
+fun @fib(%n_param: i32): i32 {
 %0:
-  @x1 = alloc i32
-  store %x1_param, @x1
-  @x2 = alloc i32
-  store %x2_param, @x2
-  @x3 = alloc i32
-  store %x3_param, @x3
-  @x4 = alloc i32
-  store %x4_param, @x4
-  @x5 = alloc i32
-  store %x5_param, @x5
-  @x6 = alloc i32
-  store %x6_param, @x6
-  @x7 = alloc i32
-  store %x7_param, @x7
-  @x8 = alloc i32
-  store %x8_param, @x8
-  @x9 = alloc i32
-  store %x9_param, @x9
-  @x10 = alloc i32
-  store %x10_param, @x10
-  @x11 = alloc i32
-  store %x11_param, @x11
-  @x12 = alloc i32
-  store %x12_param, @x12
-  %1 = load @x1
-  %2 = load @x2
-  %3 = add %1, %2
-  %4 = load @x3
-  %5 = add %3, %4
-  %6 = load @x4
-  %7 = add %5, %6
-  %8 = load @x5
-  %9 = add %7, %8
-  %10 = load @x6
-  %11 = add %9, %10
-  %12 = load @x7
-  %13 = add %11, %12
-  %14 = load @x8
-  %15 = add %13, %14
-  %16 = load @x9
-  %17 = add %15, %16
-  %18 = load @x10
-  %19 = add %17, %18
-  %20 = load @x11
-  %21 = add %19, %20
-  %22 = load @x12
-  %23 = add %21, %22
-  ret %23
+  @n = alloc i32
+  store %n_param, @n
+  %1 = load @n
+  %2 = eq %1, 0
+  br %2, %bb1_if_block_1, %bb0_if_block_end
+
+%bb1_if_block_1:
+  ret 0
+
+%bb0_if_block_end:
+  %3 = load @n
+  %4 = eq %3, 1
+  br %4, %bb3_if_block_1, %bb2_if_block_end
+
+%bb3_if_block_1:
+  ret 1
+
+%bb2_if_block_end:
+  @p = alloc i32
+  %5 = load @n
+  %6 = sub %5, 1
+  store %6, @p
+  @q = alloc i32
+  %7 = load @n
+  %8 = sub %7, 2
+  store %8, @q
+  %9 = load @p
+  %10 = call @fib(%9)
+  %11 = load @q
+  %12 = call @fib(%11)
+  %13 = add %10, %12
+  ret %13
 }
 
 fun @main(): i32 {
-%24:
-  %25 = load @a
-  %26 = load @b
-  %27 = load @c
-  %28 = load @d
-  %29 = load @e
-  %30 = load @f
-  %31 = load @g
-  %32 = load @h
-  %33 = load @i
-  %34 = load @j
-  %35 = load @k
-  %36 = load @l
-  %37 = call @func(%25, %26, %27, %28, %29, %30, %31, %32, %33, %34, %35, %36)
-  ret %37
+%14:
+  @tmp = alloc i32
+  store 10, @tmp
+  %15 = load @tmp
+  %16 = call @fib(%15)
+  ret %16
 }
