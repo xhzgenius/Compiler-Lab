@@ -4,11 +4,15 @@
 mod build_declarations;
 mod build_expressions;
 mod build_statements;
+use crate::ast_def::expressions::Exp;
+use crate::ast_def::symbols::BType;
 use crate::ast_def::*;
-use koopa::ir::builder_traits::BasicBlockBuilder;
-use koopa::ir::entities::{BasicBlock, Function, Value}; // Koopa IR builder
+use koopa::ir::builder_traits::{BasicBlockBuilder, LocalInstBuilder};
+use koopa::ir::entities::{BasicBlock, Function, Value, ValueData}; // Koopa IR builder
 use koopa::ir::{Program, Type, TypeKind}; // All the symbol defined in the AST
 use std::collections::HashMap;
+
+use self::build_expressions::{IRExpBuildResult, IRExpBuildable};
 
 pub fn generate_ir(comp_unit: &CompUnit) -> Result<Program, String> {
     let mut program = Program::new();
@@ -177,6 +181,22 @@ impl IRBuildable for Unit {
     }
 }
 
+fn get_valuedata(
+    value: Value,
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> ValueData {
+    if value.is_global() {
+        program.borrow_value(value).clone()
+    } else {
+        program
+            .func(my_ir_generator_info.curr_func.unwrap())
+            .dfg()
+            .value(value)
+            .clone()
+    }
+}
+
 /// Helper function to build a new value.
 fn create_new_local_value<'a>(
     program: &'a mut Program,
@@ -236,4 +256,46 @@ fn insert_basic_blocks<T>(
         .layout_mut()
         .bbs_mut()
         .extend(basic_blocks);
+}
+
+fn build_shape(
+    shape_exps: &Vec<Exp>,
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> Result<Vec<usize>, String> {
+    let mut result = vec![];
+    for exp in shape_exps {
+        match exp.build(program, my_ir_generator_info)? {
+            IRExpBuildResult::Const(int) => result.push(int as usize),
+            IRExpBuildResult::Value(_) => {
+                return Err(format!("The shape of array must be constant! "))
+            }
+        }
+    }
+    Ok(result.clone())
+}
+
+fn get_array_type(btype: &BType, shape: &[usize]) -> TypeKind {
+    if shape.is_empty() {
+        return btype.content.clone();
+    }
+    let inner_typekind = get_array_type(btype, &shape[1..]);
+    TypeKind::Array(Type::get(inner_typekind), shape[0])
+}
+
+/// This is a LVal Value. It should always be a local Value.
+fn get_element_in_ndarray(
+    array: Value,
+    indexes: &[Value],
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> Value {
+    if indexes.is_empty() {
+        array
+    } else {
+        let element =
+            create_new_local_value(program, my_ir_generator_info).get_elem_ptr(array, indexes[0]);
+        insert_local_instructions(program, my_ir_generator_info, [element]);
+        get_element_in_ndarray(element, &indexes[1..], program, my_ir_generator_info)
+    }
 }

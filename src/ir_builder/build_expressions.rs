@@ -4,8 +4,8 @@ use crate::ast_def::expressions::*;
 use koopa::ir::{builder_traits::*, Program, Type, Value};
 
 use super::{
-    create_new_block, create_new_local_value, insert_basic_blocks, insert_local_instructions,
-    MyIRGeneratorInfo, SymbolTableEntry,
+    create_new_block, create_new_local_value, get_element_in_ndarray, get_valuedata,
+    insert_basic_blocks, insert_local_instructions, MyIRGeneratorInfo, SymbolTableEntry,
 };
 
 /// IR expression building result. If the expression is a constant expression, returns the i32 result.
@@ -460,11 +460,7 @@ impl IRExpBuildable for UnaryExp {
                         IRExpBuildResult::Value(v) => v,
                     };
                     // Here the real_param can only be local.
-                    if program
-                        .func(my_ir_generator_info.curr_func.unwrap())
-                        .dfg()
-                        .value(real_param)
-                        .ty()
+                    if get_valuedata(real_param, program, my_ir_generator_info).ty()
                         != program.func(func).dfg().value(func_decl_params[i]).ty()
                     {
                         return Err(format!(
@@ -512,22 +508,40 @@ impl IRExpBuildable for PrimaryExp {
 impl IRExpBuildable for LVal {
     fn build(
         &self,
-        _program: &mut Program,
+        program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRExpBuildResult, String> {
-        let LVal::Default(ident, indexes) = self;
+        let LVal::Default(ident, index_exps) = self;
         match my_ir_generator_info.symbol_tables.get(&ident.content) {
             Some(SymbolTableEntry::Variable(_lval_type, ptr)) => {
-                if indexes.is_empty() { // A common variable
-                    Ok(IRExpBuildResult::Value(*ptr))
-                } else { // An array. Requires ptr to be a pointer.
-                    dbg!(_lval_type.to_string(), ptr);
-                    todo!()
+                let ptr = ptr.clone();
+                if my_ir_generator_info.curr_func.is_none() {
+                    return Err(format!("Global LVal should not be a variable! "));
+                }
+                if index_exps.is_empty() {
+                    // A common variable
+                    Ok(IRExpBuildResult::Value(ptr))
+                } else {
+                    // An array. Requires ptr to be a pointer.
+                    let mut index_values = vec![];
+                    for exp in index_exps {
+                        let build = exp.build(program, my_ir_generator_info)?;
+                        index_values.push(match build {
+                            IRExpBuildResult::Const(int) => {
+                                create_new_local_value(program, my_ir_generator_info).integer(int)
+                            }
+                            IRExpBuildResult::Value(value) => value,
+                        })
+                    }
+                    Ok(IRExpBuildResult::Value(get_element_in_ndarray(
+                        ptr,
+                        &index_values,
+                        program,
+                        my_ir_generator_info,
+                    )))
                 }
             }
-            Some(SymbolTableEntry::Constant(_lval_type, int)) => {
-                Ok(IRExpBuildResult::Const(*int))
-            }
+            Some(SymbolTableEntry::Constant(_lval_type, int)) => Ok(IRExpBuildResult::Const(*int)),
             None => Err(format!("Undeclared symbol: {}", ident.content)),
         }
     }

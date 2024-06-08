@@ -1,12 +1,12 @@
 //! Build a single component into Koopa IR.
 
-use crate::ast_def::{declarations::*, expressions::Exp, symbols::BType};
-use koopa::ir::{builder_traits::*, FunctionData, Program, Type, TypeKind, Value};
+use crate::ast_def::declarations::*;
+use koopa::ir::{builder_traits::*, FunctionData, Program, Type, Value};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
-    create_new_local_value, insert_local_instructions, IRBuildResult, IRBuildable,
-    MyIRGeneratorInfo, SymbolTableEntry,
+    build_shape, create_new_local_value, get_array_type, insert_local_instructions, IRBuildResult,
+    IRBuildable, MyIRGeneratorInfo, SymbolTableEntry,
 };
 
 impl IRBuildable for FuncDef {
@@ -135,7 +135,7 @@ pub enum IRInitValBuildResult {
 impl InitVal {
     fn build(
         &self,
-        shape: &Vec<usize>,
+        shape: &[usize],
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRInitValBuildResult, String> {
@@ -156,8 +156,22 @@ impl InitVal {
             },
             InitVal::Aggregate(aggr) => {
                 let mut elems = vec![];
+                let mut shape_cnt = Vec::<usize>::new();
+                for _ in 0..shape.len() {
+                    shape_cnt.push(0);
+                }
                 for initval in aggr {
-                    let elem = match initval.build(shape, program, my_ir_generator_info)? {
+                    // Decide which dim to aggregate.
+                    let mut curr_possible_dim = shape.len();
+                    for dim in (0..shape.len()).rev() {
+                        if shape_cnt[dim] == 0 {
+                            curr_possible_dim -= 1;
+                        } else {
+                            break;
+                        }
+                    }
+                    let curr_element_shape = &shape[curr_possible_dim..shape.len()];
+                    let elem = match initval.build(curr_element_shape, program, my_ir_generator_info)? {
                         IRInitValBuildResult::Const(int) => {
                             if is_global {
                                 program.new_value().integer(int)
@@ -171,6 +185,7 @@ impl InitVal {
                         IRInitValBuildResult::Aggregate(value) => value,
                     };
                     elems.push(elem);
+                    shape_cnt[curr_possible_dim] += 1;
                 }
                 if is_global {
                     Ok(IRInitValBuildResult::Aggregate(
@@ -237,31 +252,6 @@ impl IRBuildable for ConstDecl {
         }
         Ok(IRBuildResult::OK)
     }
-}
-
-fn build_shape(
-    shape_exps: &Vec<Exp>,
-    program: &mut Program,
-    my_ir_generator_info: &mut MyIRGeneratorInfo,
-) -> Result<Vec<usize>, String> {
-    let mut result = vec![];
-    for exp in shape_exps {
-        match exp.build(program, my_ir_generator_info)? {
-            IRExpBuildResult::Const(int) => result.push(int as usize),
-            IRExpBuildResult::Value(_) => {
-                return Err(format!("The shape of array must be constant! "))
-            }
-        }
-    }
-    Ok(result.clone())
-}
-
-fn get_array_type(btype: &BType, shape: &[usize]) -> TypeKind {
-    if shape.is_empty() {
-        return btype.content.clone();
-    }
-    let inner_typekind = get_array_type(btype, &shape[1..]);
-    TypeKind::Array(Type::get(inner_typekind), shape[0])
 }
 
 impl IRBuildable for VarDecl {

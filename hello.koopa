@@ -1,5 +1,4 @@
-global @arr = alloc [[i32, 2], 1], {{1, 2}}
-global @brr = alloc [[i32, 1], 2], {{114}, {514}}
+global @x = alloc [i32, 2], {10, 20}
 
 decl @getint(): i32
 
@@ -19,7 +18,9 @@ decl @stoptime()
 
 fun @main(): i32 {
 %0:
-  @arr_0 = alloc [[i32, 2], 1]
-  store {{1, 2}}, @arr_0
-  ret
+  @arr = alloc [i32, 5]
+  store {1, 2, 3, 4, 5}, @arr
+  %1 = getelemptr @arr, 2
+  %2 = load %1
+  ret %2
 }
