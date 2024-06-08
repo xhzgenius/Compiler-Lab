@@ -525,8 +525,8 @@ impl IRExpBuildable for LVal {
                     todo!()
                 }
             }
-            Some(SymbolTableEntry::Constant(_lval_type, values)) => {
-                Ok(IRExpBuildResult::Const(values[0]))
+            Some(SymbolTableEntry::Constant(_lval_type, int)) => {
+                Ok(IRExpBuildResult::Const(*int))
             }
             None => Err(format!("Undeclared symbol: {}", ident.content)),
         }

@@ -216,7 +216,7 @@ impl IRBuildable for ConstDecl {
                 IRInitValBuildResult::Const(int) => {
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
-                        SymbolTableEntry::Constant(const_type.clone(), vec![int]),
+                        SymbolTableEntry::Constant(const_type.clone(), int),
                     );
                 }
                 IRInitValBuildResult::Var(_) => {
@@ -226,9 +226,11 @@ impl IRBuildable for ConstDecl {
                     ))
                 }
                 IRInitValBuildResult::Aggregate(aggr) => {
+                    let array_ptr = program.new_value().global_alloc(aggr);
+                    program.set_value_name(array_ptr, Some(format!("@{}", ident.content,)));
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
-                        SymbolTableEntry::Variable(const_type.clone(), aggr),
+                        SymbolTableEntry::Variable(const_type.clone(), array_ptr),
                     );
                 }
             }

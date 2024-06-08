@@ -1,4 +1,5 @@
 global @arr = alloc [[i32, 2], 1], {{1, 2}}
+global @brr = alloc [[i32, 1], 2], {{114}, {514}}
 
 decl @getint(): i32
 

@@ -86,7 +86,7 @@ impl SymbolTableStack {
 
 pub enum SymbolTableEntry {
     Variable(TypeKind, Value),
-    Constant(TypeKind, Vec<i32>),
+    Constant(TypeKind, i32),
 }
 
 impl std::fmt::Debug for SymbolTableEntry {
