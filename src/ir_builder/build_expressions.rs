@@ -442,7 +442,7 @@ impl IRExpBuildable for UnaryExp {
                     .cloned()
                 {
                     Some(f) => Ok(f),
-                    None => Err(format!("Function {} not found!", &func_id.content)),
+                    None => Err(format!("Undeclared FuncCall symbol: {}", &func_id.content)),
                 }?;
                 let TypeKind::Function(form_param_types, _) = 
                     program.func(callee_func).ty().kind() 
@@ -543,9 +543,6 @@ impl LVal {
         match my_ir_generator_info.symbol_tables.get(&ident.content) {
             Some(SymbolTableEntry::Variable(_, ptr)) => {
                 let ptr = ptr.clone();
-                if my_ir_generator_info.curr_func.is_none() {
-                    return Err(format!("Global LVal should not be a variable! "));
-                }
                 // Build indexes.
                 let mut index_values = vec![];
                 for exp in index_exps {
@@ -563,7 +560,7 @@ impl LVal {
                 Ok(result)
             }
             Some(SymbolTableEntry::Constant(_lval_type, int)) => Ok(IRLValBuildResult::Const(*int)),
-            None => Err(format!("Undeclared symbol: {}", ident.content)),
+            None => Err(format!("Undeclared LVal symbol: {}", ident.content)),
         }
     }
 }

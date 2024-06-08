@@ -1,4 +1,4 @@
-global @a = alloc [[i32, 5], 5], zeroinit
+global @arr = alloc [[[i32, 4], 3], 2], {{{1, 2, 3, 4}, {5, 0, 0, 0}, {6, 0, 0, 0}}, {{7, 8, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}}
 
 decl @getint(): i32
 
@@ -16,17 +16,9 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @func(%a_param: *[i32, 5]): i32 {
-%0:
-  @a_0 = alloc *[i32, 5]
-  store %a_param, @a_0
-  ret
-}
-
 fun @main(): i32 {
-%1:
-  %2 = getelemptr @a, 0
-  %3 = call @func(%2)
-  call @putint(%3)
-  ret 0
+%0:
+  %1 = alloc [[[i32, 4], 3], 2]
+  store {{{1, 2, 3, 4}, {5, 0, 0, 0}, {6, 0, 0, 0}}, {{7, 8, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}}, %1
+  ret
 }

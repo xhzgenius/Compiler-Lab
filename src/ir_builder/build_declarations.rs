@@ -5,8 +5,8 @@ use koopa::ir::{builder_traits::*, FunctionData, Program, Type, Value};
 
 use super::{
     build_expressions::{IRExpBuildResult, IRExpBuildable},
-    build_shape, create_new_local_value, get_array_type, insert_local_instructions, IRBuildResult,
-    IRBuildable, MyIRGeneratorInfo, SymbolTableEntry,
+    build_shape, create_new_local_value, get_array_type, get_valuedata, insert_local_instructions,
+    IRBuildResult, IRBuildable, MyIRGeneratorInfo, SymbolTableEntry,
 };
 
 impl IRBuildable for FuncDef {
@@ -143,6 +143,89 @@ pub enum IRInitValBuildResult {
     Aggregate(Value),
 }
 
+fn build_new_aggregate(
+    shape: &[usize],
+    childs: &[Box<InitVal>],
+    is_global: bool,
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> Result<(Value, usize), String> {
+    let mut elems = vec![];
+    let mut curr_child_idx = 0;
+    if shape.len() == 1 {
+        for _ in 0..shape[0] {
+            // 1D array. Only contains Exps.
+            let next_child = if curr_child_idx < childs.len() {
+                Some(&*childs[curr_child_idx])
+            } else {
+                None
+            };
+            let result = match next_child {
+                Some(InitVal::Exp(exp)) => exp.build(program, my_ir_generator_info)?,
+                Some(InitVal::Aggregate(_)) => return Err(format!("Wrong aggregate")),
+                None => IRExpBuildResult::Const(0),
+            };
+            curr_child_idx += 1;
+            let value = match result {
+                IRExpBuildResult::Const(int) => {
+                    if is_global {
+                        program.new_value().integer(int)
+                    } else {
+                        create_new_local_value(program, my_ir_generator_info).integer(int)
+                    }
+                }
+                IRExpBuildResult::Value(v) => v,
+            };
+            elems.push(value);
+        }
+    } else {
+        for _ in 0..shape[0] {
+            let next_child = if curr_child_idx < childs.len() {
+                Some(&*childs[curr_child_idx])
+            } else {
+                None
+            };
+            match next_child {
+                Some(InitVal::Exp(_)) => {}
+                Some(InitVal::Aggregate(_)) => {
+                    let result =
+                        childs[curr_child_idx].build(&shape[1..], program, my_ir_generator_info)?;
+                    match result {
+                        IRInitValBuildResult::Const(_) | IRInitValBuildResult::Var(_) => {
+                            panic!("Aggregate can only build aggregate!")
+                        }
+                        IRInitValBuildResult::Aggregate(aggr) => elems.push(aggr),
+                    }
+                    curr_child_idx += 1;
+                    continue;
+                }
+                None => {}
+            };
+            let (result, used_child_cnt) = build_new_aggregate(
+                &shape[1..],
+                if curr_child_idx < childs.len() {
+                    &childs[curr_child_idx..]
+                } else {
+                    &[]
+                },
+                is_global,
+                program,
+                my_ir_generator_info,
+            )?;
+            curr_child_idx += used_child_cnt;
+            elems.push(result);
+        }
+    }
+    if is_global {
+        Ok((program.new_value().aggregate(elems), curr_child_idx))
+    } else {
+        Ok((
+            create_new_local_value(program, my_ir_generator_info).aggregate(elems),
+            curr_child_idx,
+        ))
+    }
+}
+
 impl InitVal {
     fn build(
         &self,
@@ -157,59 +240,60 @@ impl InitVal {
                 IRExpBuildResult::Value(value) => {
                     if is_global {
                         Err(format!(
-                            "Non-constant expression in global variable initval: {:?}",
-                            self
+                            "Non-constant expression '{:?}' in global variable initval: {:?}",
+                            exp, self
                         ))
                     } else {
                         Ok(IRInitValBuildResult::Var(value))
                     }
                 }
             },
-            InitVal::Aggregate(aggr) => {
-                let mut elems = vec![];
-                // let mut shape_cnt = Vec::<usize>::new();
-                // for _ in 0..shape.len() {
-                //     shape_cnt.push(0);
+            InitVal::Aggregate(childs) => {
+                let (value, _) =
+                    build_new_aggregate(shape, childs, is_global, program, my_ir_generator_info)?;
+                Ok(IRInitValBuildResult::Aggregate(value))
+                // let mut elems = vec![];
+                // let mut curr_child_idx = 0;
+                // for i in 0..shape[0] {
+                //     let child_result =
+                //         childs[i].build(&shape[1..], program, my_ir_generator_info)?;
+                //     match child_result {
+                //         IRInitValBuildResult::Const(_) => todo!(),
+                //         IRInitValBuildResult::Var(_) => todo!(),
+                //         IRInitValBuildResult::Aggregate(_) => todo!(),
+                //     }
                 // }
-                for initval in aggr {
-                    // Decide which dim to aggregate.
-                    // let mut curr_possible_dim = shape.len();
-                    // for dim in (0..shape.len()).rev() {
-                    //     if shape_cnt[dim] == 0 {
-                    //         curr_possible_dim -= 1;
-                    //     } else {
-                    //         break;
-                    //     }
-                    // }
-                    let curr_element_shape = &shape[..shape.len() - 1];
-                    // let curr_element_shape = &shape[curr_possible_dim..shape.len()];
-                    let elem =
-                        match initval.build(curr_element_shape, program, my_ir_generator_info)? {
-                            IRInitValBuildResult::Const(int) => {
-                                if is_global {
-                                    program.new_value().integer(int)
-                                } else {
-                                    create_new_local_value(program, my_ir_generator_info)
-                                        .integer(int)
-                                }
-                            }
-                            IRInitValBuildResult::Var(_) => {
-                                return Err(format!("Aggregate cannot have a variable in it!"))
-                            }
-                            IRInitValBuildResult::Aggregate(value) => value,
-                        };
-                    elems.push(elem);
-                    // shape_cnt[curr_possible_dim] += 1;
-                }
-                if is_global {
-                    Ok(IRInitValBuildResult::Aggregate(
-                        program.new_value().aggregate(elems),
-                    ))
-                } else {
-                    Ok(IRInitValBuildResult::Aggregate(
-                        create_new_local_value(program, my_ir_generator_info).aggregate(elems),
-                    ))
-                }
+                // for child_initval in childs {
+                //     match &**child_initval {
+                //         InitVal::Exp(exp) => {
+                //             let value = match exp.build(program, my_ir_generator_info)? {
+                //                 IRExpBuildResult::Const(int) => {
+                //                     create_new_local_value(program, my_ir_generator_info)
+                //                         .integer(int)
+                //                 }
+                //                 IRExpBuildResult::Value(v) => {
+                //                     if is_global {
+                //                         return Err(format!("Non-constant expression '{:?}' in global variable initval: {:?}",
+                //                         exp, self));
+                //                     }
+                //                     v
+                //                 }
+                //             };
+                //         }
+                //         InitVal::Aggregate(_) => {
+                //             todo!()
+                //         }
+                //     }
+                // }
+                // if is_global {
+                //     Ok(IRInitValBuildResult::Aggregate(
+                //         program.new_value().aggregate(elems),
+                //     ))
+                // } else {
+                //     Ok(IRInitValBuildResult::Aggregate(
+                //         create_new_local_value(program, my_ir_generator_info).aggregate(elems),
+                //     ))
+                // }
             }
         }
     }
@@ -250,13 +334,28 @@ impl IRBuildable for ConstDecl {
                 }
                 IRInitValBuildResult::Var(_) => {
                     return Err(format!(
-                        "Non-constant expression in constant declaration: {:?}",
+                        "Non-constant expression in constant initval: {:?}",
                         const_def
                     ))
                 }
                 IRInitValBuildResult::Aggregate(aggr) => {
-                    let array_ptr = program.new_value().global_alloc(aggr);
-                    program.set_value_name(array_ptr, Some(format!("@{}", ident.content,)));
+                    let array_ptr = if my_ir_generator_info.curr_func.is_some() {
+                        let aggr_valuedata = get_valuedata(aggr, program, my_ir_generator_info);
+                        let addr = create_new_local_value(program, my_ir_generator_info)
+                            .alloc(aggr_valuedata.ty().clone());
+                        let store_inst =
+                            create_new_local_value(program, my_ir_generator_info).store(aggr, addr);
+                        insert_local_instructions(
+                            program,
+                            my_ir_generator_info,
+                            [addr, store_inst],
+                        );
+                        addr
+                    } else {
+                        let addr = program.new_value().global_alloc(aggr);
+                        program.set_value_name(addr, Some(format!("@{}", ident.content,)));
+                        addr
+                    };
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Variable(const_type.clone(), array_ptr),
@@ -288,16 +387,16 @@ impl IRBuildable for VarDecl {
             let final_var_addr = match my_ir_generator_info.curr_func {
                 // If it's local:
                 Some(func) => {
+                    // Allocate the new local variable.
                     let var_addr = create_new_local_value(program, my_ir_generator_info)
                         .alloc(Type::get(var_type.clone()));
                     program
                         .func_mut(func)
                         .dfg_mut()
                         .set_value_name(var_addr, Some(format!("@{}", ident.content,)));
-                    // Insert the "alloc" instruction.
                     insert_local_instructions(program, my_ir_generator_info, [var_addr]);
+                    // Build RHS value (if exists).
                     if let Some(rhs) = possible_rhs {
-                        // Build RHS value (if exists).
                         let result = rhs.build(&shape, program, my_ir_generator_info)?;
                         let rhs_value = match result {
                             IRInitValBuildResult::Const(int) => {
@@ -326,6 +425,7 @@ impl IRBuildable for VarDecl {
                             ident.content
                         ));
                     }
+                    // Allocate the new global variable.
                     let var_addr = match possible_rhs {
                         Some(rhs) => match rhs.build(&shape, program, my_ir_generator_info)? {
                             IRInitValBuildResult::Const(int) => {
