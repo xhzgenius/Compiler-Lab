@@ -562,7 +562,7 @@ impl IRExpBuildable for LVal {
                     // A common variable
                     Ok(IRExpBuildResult::Value(ptr))
                 } else {
-                    // An array. Requires ptr to be a pointer to an array.
+                    // An array. Requires ptr to be a pointer to an array, or a pointer to the array's index 0.
                     let mut index_values = vec![];
                     for exp in index_exps {
                         let build = exp.build(program, my_ir_generator_info)?;
@@ -573,12 +573,14 @@ impl IRExpBuildable for LVal {
                             IRExpBuildResult::Value(value) => value,
                         })
                     }
-                    Ok(IRExpBuildResult::Value(get_element_in_ndarray(
+                    let addr = get_element_in_ndarray(
                         ptr,
                         &index_values,
                         program,
                         my_ir_generator_info,
-                    )))
+                    );
+                    // dbg!(get_valuedata(addr, program, my_ir_generator_info));
+                    Ok(IRExpBuildResult::Value(addr))
                 }
             }
             Some(SymbolTableEntry::Constant(_lval_type, int)) => Ok(IRExpBuildResult::Const(*int)),

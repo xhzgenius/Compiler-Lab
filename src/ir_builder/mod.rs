@@ -294,13 +294,19 @@ fn get_element_in_ndarray(
         array_or_pointer
     } else {
         let value_data = get_valuedata(array_or_pointer, program, my_ir_generator_info);
+        // dbg!(&value_data);
         let element = match value_data.ty().kind() {
-            TypeKind::Array(_, _) => create_new_local_value(program, my_ir_generator_info)
-                .get_elem_ptr(array_or_pointer, indexes[0]),
-            TypeKind::Pointer(_) => create_new_local_value(program, my_ir_generator_info)
-                .get_ptr(array_or_pointer, indexes[0]),
+            TypeKind::Pointer(base_type) => match base_type.kind() {
+                TypeKind::Array(_, _) => create_new_local_value(program, my_ir_generator_info)
+                    .get_elem_ptr(array_or_pointer, indexes[0]),
+                TypeKind::Pointer(_) => create_new_local_value(program, my_ir_generator_info)
+                    .get_ptr(array_or_pointer, indexes[0]),
+                _ => {
+                    panic!("Not an array: {:?}!", value_data.name());
+                }
+            },
             _ => {
-                panic!("Not an array: {:?}!", value_data.name());
+                panic!("Not a LVal: {:?}!", value_data.name());
             }
         };
         insert_local_instructions(program, my_ir_generator_info, [element]);

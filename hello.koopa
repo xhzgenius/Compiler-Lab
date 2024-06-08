@@ -1,3 +1,5 @@
+global @a = alloc [i32, 10], zeroinit
+
 decl @getint(): i32
 
 decl @getch(): i32
@@ -14,20 +16,9 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @f(%arr_param: *i32): i32 {
-%0:
-  @arr = alloc *i32
-  store %arr_param, @arr
-  %1 = getptr @arr, 1
-  %2 = load %1
-  ret %2
-}
-
 fun @main(): i32 {
-%3:
-  @arr = alloc [i32, 2]
-  store {1, 2}, @arr
-  %4 = getelemptr @arr, 0
-  %5 = call @f(%4)
-  ret %5
+%0:
+  %1 = getelemptr @a, 0
+  store 1, %1
+  ret 0
 }
