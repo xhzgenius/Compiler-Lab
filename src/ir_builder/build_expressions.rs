@@ -466,10 +466,9 @@ impl IRExpBuildable for UnaryExp {
                         .value(func_decl_params[i])
                         .ty()
                         .clone();
-                    let real_param_type =
-                        get_valuedata(real_param, program, my_ir_generator_info)
-                            .ty()
-                            .clone();
+                    let real_param_type = get_valuedata(real_param, program, my_ir_generator_info)
+                        .ty()
+                        .clone();
                     if real_param_type != form_param_type {
                         return Err(format!(
                             "The parameter type of function '{}' is incorrect! Wanted {}, but got {}.",
@@ -563,7 +562,7 @@ impl IRExpBuildable for LVal {
                     // A common variable
                     Ok(IRExpBuildResult::Value(ptr))
                 } else {
-                    // An array. Requires ptr to be a pointer to an array or a pointer to the base type.
+                    // An array. Requires ptr to be a pointer to an array.
                     let mut index_values = vec![];
                     for exp in index_exps {
                         let build = exp.build(program, my_ir_generator_info)?;

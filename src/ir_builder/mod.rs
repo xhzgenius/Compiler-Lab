@@ -285,16 +285,24 @@ fn get_array_type(btype: &BType, shape: &[usize]) -> TypeKind {
 
 /// This is a LVal Value. It should always be a local Value.
 fn get_element_in_ndarray(
-    array: Value,
+    array_or_pointer: Value,
     indexes: &[Value],
     program: &mut Program,
     my_ir_generator_info: &mut MyIRGeneratorInfo,
 ) -> Value {
     if indexes.is_empty() {
-        array
+        array_or_pointer
     } else {
-        let element =
-            create_new_local_value(program, my_ir_generator_info).get_elem_ptr(array, indexes[0]);
+        let value_data = get_valuedata(array_or_pointer, program, my_ir_generator_info);
+        let element = match value_data.ty().kind() {
+            TypeKind::Array(_, _) => create_new_local_value(program, my_ir_generator_info)
+                .get_elem_ptr(array_or_pointer, indexes[0]),
+            TypeKind::Pointer(_) => create_new_local_value(program, my_ir_generator_info)
+                .get_ptr(array_or_pointer, indexes[0]),
+            _ => {
+                panic!("Not an array: {:?}!", value_data.name());
+            }
+        };
         insert_local_instructions(program, my_ir_generator_info, [element]);
         get_element_in_ndarray(element, &indexes[1..], program, my_ir_generator_info)
     }
