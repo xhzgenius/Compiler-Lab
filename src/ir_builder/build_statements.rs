@@ -4,7 +4,7 @@ use crate::ast_def::statements::*;
 use koopa::ir::{builder_traits::*, Program};
 
 use super::{
-    build_expressions::{IRExpBuildResult, IRExpBuildable},
+    build_expressions::{IRExpBuildResult, IRExpBuildable, IRLValBuildResult},
     create_new_block, create_new_local_value, insert_basic_blocks, insert_local_instructions,
     IRBuildResult, IRBuildable, MyIRGeneratorInfo,
 };
@@ -53,13 +53,13 @@ impl IRBuildable for BasicStmt {
                 // Build LVal value.
                 let result1 = lval.build(program, my_ir_generator_info)?;
                 let lval_ptr = match result1 {
-                    IRExpBuildResult::Const(_int) => {
+                    IRLValBuildResult::Const(_) | IRLValBuildResult::TempVal(_) => {
                         return Err(format!(
-                            "Constant expression ({:?}) should not be a left value! ",
+                            "Constant expression or temp value ({:?}) should not be a left value! ",
                             lval
                         ))
                     }
-                    IRExpBuildResult::Value(value) => value,
+                    IRLValBuildResult::Addr(addr) => addr,
                 };
                 // Build RHS value.
                 let result2 = rhs_exp.build(program, my_ir_generator_info)?;

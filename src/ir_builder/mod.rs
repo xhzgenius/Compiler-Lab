@@ -7,7 +7,7 @@ mod build_statements;
 use crate::ast_def::expressions::Exp;
 use crate::ast_def::symbols::BType;
 use crate::ast_def::*;
-use koopa::ir::builder_traits::{BasicBlockBuilder, LocalInstBuilder};
+use koopa::ir::builder_traits::{BasicBlockBuilder};
 use koopa::ir::entities::{BasicBlock, Function, Value, ValueData}; // Koopa IR builder
 use koopa::ir::{Program, Type, TypeKind}; // All the symbol defined in the AST
 use std::collections::HashMap;
@@ -283,33 +283,3 @@ fn get_array_type(btype: &BType, shape: &[usize]) -> TypeKind {
     TypeKind::Array(Type::get(inner_typekind), shape[0])
 }
 
-/// This is a LVal Value. It should always be a local Value.
-fn get_element_in_ndarray(
-    array_or_pointer: Value,
-    indexes: &[Value],
-    program: &mut Program,
-    my_ir_generator_info: &mut MyIRGeneratorInfo,
-) -> Value {
-    if indexes.is_empty() {
-        array_or_pointer
-    } else {
-        let value_data = get_valuedata(array_or_pointer, program, my_ir_generator_info);
-        // dbg!(&value_data);
-        let element = match value_data.ty().kind() {
-            TypeKind::Pointer(base_type) => match base_type.kind() {
-                TypeKind::Array(_, _) => create_new_local_value(program, my_ir_generator_info)
-                    .get_elem_ptr(array_or_pointer, indexes[0]),
-                TypeKind::Pointer(_) => create_new_local_value(program, my_ir_generator_info)
-                    .get_ptr(array_or_pointer, indexes[0]),
-                _ => {
-                    panic!("Not an array: {:?}!", value_data.name());
-                }
-            },
-            _ => {
-                panic!("Not a LVal: {:?}!", value_data.name());
-            }
-        };
-        insert_local_instructions(program, my_ir_generator_info, [element]);
-        get_element_in_ndarray(element, &indexes[1..], program, my_ir_generator_info)
-    }
-}

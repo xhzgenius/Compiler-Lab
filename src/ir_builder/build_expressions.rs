@@ -4,7 +4,7 @@ use crate::ast_def::expressions::*;
 use koopa::ir::{builder_traits::*, Program, Type, TypeKind, Value};
 
 use super::{
-    create_new_block, create_new_local_value, get_element_in_ndarray, get_valuedata,
+    create_new_block, create_new_local_value, get_valuedata,
     insert_basic_blocks, insert_local_instructions, MyIRGeneratorInfo, SymbolTableEntry,
 };
 
@@ -436,7 +436,7 @@ impl IRExpBuildable for UnaryExp {
                 koopa::ir::BinaryOp::Eq,
             ),
             UnaryExp::FuncCall(func_id, param_exps) => {
-                let func = match my_ir_generator_info
+                let callee_func = match my_ir_generator_info
                     .function_table
                     .get(&func_id.content)
                     .cloned()
@@ -444,11 +444,14 @@ impl IRExpBuildable for UnaryExp {
                     Some(f) => Ok(f),
                     None => Err(format!("Function {} not found!", &func_id.content)),
                 }?;
-                let func_decl_params = program.func(func).params().to_owned();
-                if param_exps.len() != func_decl_params.len() {
+                let TypeKind::Function(form_param_types, _) = 
+                    program.func(callee_func).ty().kind() 
+                    else {panic!("Should be a TypeKind::Function")};
+                let form_param_types = form_param_types.clone();
+                if param_exps.len() != form_param_types.len() {
                     return Err(format!(
-                        "The parameter number of function '{}' is incorrect!",
-                        &func_id.content
+                        "The parameter number of function '{}' is incorrect! Expected {} parameters, but got {}.",
+                        &func_id.content, form_param_types.len(), param_exps.len()
                     ));
                 }
                 let mut real_params = vec![];
@@ -460,26 +463,20 @@ impl IRExpBuildable for UnaryExp {
                         IRExpBuildResult::Value(v) => v,
                     };
                     // Here the real_param can only be local.
-                    let form_param_type = program
-                        .func(func)
-                        .dfg()
-                        .value(func_decl_params[i])
-                        .ty()
-                        .clone();
                     let real_param_type = get_valuedata(real_param, program, my_ir_generator_info)
                         .ty()
                         .clone();
-                    if real_param_type != form_param_type {
+                    if real_param_type != form_param_types[i] {
                         return Err(format!(
                             "The parameter type of function '{}' is incorrect! Wanted {}, but got {}.",
                             &func_id.content,
-                            form_param_type, real_param_type
+                            form_param_types[i], real_param_type
                         ));
                     }
                     real_params.push(real_param);
                 }
                 let call_inst = create_new_local_value(program, my_ir_generator_info)
-                    .call(func.clone(), real_params);
+                    .call(callee_func.clone(), real_params);
                 insert_local_instructions(program, my_ir_generator_info, [call_inst]);
                 Ok(IRExpBuildResult::Value(call_inst))
             }
@@ -498,43 +495,27 @@ impl IRExpBuildable for PrimaryExp {
             PrimaryExp::LVal(lval) => {
                 let result = lval.build(program, my_ir_generator_info)?;
                 match result {
-                    IRExpBuildResult::Const(_int) => Ok(result),
-                    IRExpBuildResult::Value(ptr) => {
-                        match get_valuedata(ptr, program, my_ir_generator_info)
+                    IRLValBuildResult::Const(int) => Ok(IRExpBuildResult::Const(int)),
+                    IRLValBuildResult::TempVal(value) => Ok(IRExpBuildResult::Value(value)),
+                    IRLValBuildResult::Addr(addr) => {
+                        // Load the value from the address.
+                        match get_valuedata(addr, program, my_ir_generator_info)
                             .ty()
                             .kind()
                         {
-                            TypeKind::Pointer(base_type) => {
-                                // If the PrimaryExp is an array, convert it to a pointer.
-                                if let TypeKind::Array(_, _) = base_type.kind() {
-                                    let zero =
-                                        create_new_local_value(program, my_ir_generator_info)
-                                            .integer(0);
-                                    let pointer_to_index0 =
-                                        create_new_local_value(program, my_ir_generator_info)
-                                            .get_elem_ptr(ptr, zero);
-                                    insert_local_instructions(
-                                        program,
-                                        my_ir_generator_info,
-                                        [pointer_to_index0],
-                                    );
-                                    Ok(IRExpBuildResult::Value(pointer_to_index0))
-                                }
-                                // Else if the PrimaryExp is a variable, then load it.
-                                else {
-                                    let load_inst =
-                                        create_new_local_value(program, my_ir_generator_info)
-                                            .load(ptr);
-                                    insert_local_instructions(
-                                        program,
-                                        my_ir_generator_info,
-                                        [load_inst],
-                                    );
-                                    Ok(IRExpBuildResult::Value(load_inst))
-                                }
+                            TypeKind::Pointer(_base_type) => {
+                                let load_inst =
+                                    create_new_local_value(program, my_ir_generator_info)
+                                        .load(addr);
+                                insert_local_instructions(
+                                    program,
+                                    my_ir_generator_info,
+                                    [load_inst],
+                                );
+                                Ok(IRExpBuildResult::Value(load_inst))
                             }
                             _ => {
-                                panic!("LVal (as a PrimaryExp) must be a pointer to something!")
+                                panic!("LVal (as an address) must be a pointer to something!")
                             }
                         }
                     }
@@ -545,45 +526,43 @@ impl IRExpBuildable for PrimaryExp {
     }
 }
 
-impl IRExpBuildable for LVal {
-    fn build(
+#[derive(Debug)]
+pub enum IRLValBuildResult {
+    Const(i32),
+    TempVal(Value),
+    Addr(Value),
+}
+
+impl LVal {
+    pub fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRExpBuildResult, String> {
+    ) -> Result<IRLValBuildResult, String> {
         let LVal::Default(ident, index_exps) = self;
         match my_ir_generator_info.symbol_tables.get(&ident.content) {
-            Some(SymbolTableEntry::Variable(_lval_type, ptr)) => {
+            Some(SymbolTableEntry::Variable(_, ptr)) => {
                 let ptr = ptr.clone();
                 if my_ir_generator_info.curr_func.is_none() {
                     return Err(format!("Global LVal should not be a variable! "));
                 }
-                if index_exps.is_empty() {
-                    // A common variable
-                    Ok(IRExpBuildResult::Value(ptr))
-                } else {
-                    // An array. Requires ptr to be a pointer to an array, or a pointer to the array's index 0.
-                    let mut index_values = vec![];
-                    for exp in index_exps {
-                        let build = exp.build(program, my_ir_generator_info)?;
-                        index_values.push(match build {
-                            IRExpBuildResult::Const(int) => {
-                                create_new_local_value(program, my_ir_generator_info).integer(int)
-                            }
-                            IRExpBuildResult::Value(value) => value,
-                        })
-                    }
-                    let addr = get_element_in_ndarray(
-                        ptr,
-                        &index_values,
-                        program,
-                        my_ir_generator_info,
-                    );
-                    // dbg!(get_valuedata(addr, program, my_ir_generator_info));
-                    Ok(IRExpBuildResult::Value(addr))
+                // Build indexes.
+                let mut index_values = vec![];
+                for exp in index_exps {
+                    let build = exp.build(program, my_ir_generator_info)?;
+                    index_values.push(match build {
+                        IRExpBuildResult::Const(int) => {
+                            create_new_local_value(program, my_ir_generator_info)
+                                .integer(int)
+                        }
+                        IRExpBuildResult::Value(value) => value,
+                    })
                 }
+                // Get element.
+                let result = get_element_in_ndarray(ptr, &index_values, program, my_ir_generator_info);
+                Ok(result)
             }
-            Some(SymbolTableEntry::Constant(_lval_type, int)) => Ok(IRExpBuildResult::Const(*int)),
+            Some(SymbolTableEntry::Constant(_lval_type, int)) => Ok(IRLValBuildResult::Const(*int)),
             None => Err(format!("Undeclared symbol: {}", ident.content)),
         }
     }
@@ -600,3 +579,59 @@ impl IRExpBuildable for Number {
         }
     }
 }
+
+/// This is a LVal Value. It should always be a local Value.
+fn get_element_in_ndarray(
+    array_or_pointer: Value,
+    indexes: &[Value],
+    program: &mut Program,
+    my_ir_generator_info: &mut MyIRGeneratorInfo,
+) -> IRLValBuildResult {
+    if indexes.is_empty() {
+        let value_data = get_valuedata(array_or_pointer, program, my_ir_generator_info);
+        // Finds the element. If it is an array, convert arr to &arr[0].
+        match value_data.ty().kind() {
+            TypeKind::Pointer(elem_type) => {
+                match elem_type.kind() {
+                    TypeKind::Array(_, _) => {
+                        // Is an array.
+                        let zero = create_new_local_value(program, my_ir_generator_info).integer(0);
+                        let index0_addr = create_new_local_value(program, my_ir_generator_info)
+                            .get_elem_ptr(array_or_pointer, zero);
+                        insert_local_instructions(program, my_ir_generator_info, [index0_addr]);
+                        IRLValBuildResult::TempVal(index0_addr)
+                    }
+                    _ => {
+                        // Not an array.
+                        IRLValBuildResult::Addr(array_or_pointer)
+                    }
+                }
+            }
+            _ => panic!("Not a LVal: {:?}!", value_data),
+        }
+    } else {
+        let value_data = get_valuedata(array_or_pointer, program, my_ir_generator_info);
+        let element = match value_data.ty().kind() {
+            TypeKind::Pointer(base_type) => match base_type.kind() {
+                TypeKind::Array(_, _) => create_new_local_value(program, my_ir_generator_info)
+                    .get_elem_ptr(array_or_pointer, indexes[0]),
+                TypeKind::Pointer(_) => {
+                    let loaded_ptr = create_new_local_value(program, my_ir_generator_info)
+                        .load(array_or_pointer);
+                    insert_local_instructions(program, my_ir_generator_info, [loaded_ptr]);
+                    create_new_local_value(program, my_ir_generator_info)
+                        .get_ptr(loaded_ptr, indexes[0])
+                }
+                _ => {
+                    panic!("Not an array: {:?}!", value_data.name());
+                }
+            },
+            _ => {
+                panic!("Not a LVal: {:?}!", value_data.name());
+            }
+        };
+        insert_local_instructions(program, my_ir_generator_info, [element]);
+        get_element_in_ndarray(element, &indexes[1..], program, my_ir_generator_info)
+    }
+}
+

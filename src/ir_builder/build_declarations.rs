@@ -285,17 +285,17 @@ impl IRBuildable for VarDecl {
             };
 
             // Allocate the new variable and get its Koopa IR Value.
-            let final_var_ptr = match my_ir_generator_info.curr_func {
+            let final_var_addr = match my_ir_generator_info.curr_func {
                 // If it's local:
                 Some(func) => {
-                    let var_ptr = create_new_local_value(program, my_ir_generator_info)
+                    let var_addr = create_new_local_value(program, my_ir_generator_info)
                         .alloc(Type::get(var_type.clone()));
                     program
                         .func_mut(func)
                         .dfg_mut()
-                        .set_value_name(var_ptr, Some(format!("@{}", ident.content,)));
+                        .set_value_name(var_addr, Some(format!("@{}", ident.content,)));
                     // Insert the "alloc" instruction.
-                    insert_local_instructions(program, my_ir_generator_info, [var_ptr]);
+                    insert_local_instructions(program, my_ir_generator_info, [var_addr]);
                     if let Some(rhs) = possible_rhs {
                         // Build RHS value (if exists).
                         let result = rhs.build(&shape, program, my_ir_generator_info)?;
@@ -307,11 +307,15 @@ impl IRBuildable for VarDecl {
                             IRInitValBuildResult::Aggregate(value) => value,
                         };
                         // Assign the RHS value into the new variable.
+                        // dbg!(
+                        //     get_valuedata(rhs_value, program, my_ir_generator_info),
+                        //     get_valuedata(var_addr, program, my_ir_generator_info)
+                        // );
                         let store_inst = create_new_local_value(program, my_ir_generator_info)
-                            .store(rhs_value, var_ptr);
+                            .store(rhs_value, var_addr);
                         insert_local_instructions(program, my_ir_generator_info, [store_inst]);
                     }
-                    var_ptr
+                    var_addr
                 }
                 // Or if it's global:
                 None => {
@@ -322,7 +326,7 @@ impl IRBuildable for VarDecl {
                             ident.content
                         ));
                     }
-                    let var_ptr = match possible_rhs {
+                    let var_addr = match possible_rhs {
                         Some(rhs) => match rhs.build(&shape, program, my_ir_generator_info)? {
                             IRInitValBuildResult::Const(int) => {
                                 let int_init = program.new_value().integer(int);
@@ -339,15 +343,15 @@ impl IRBuildable for VarDecl {
                             program.new_value().global_alloc(zero_init)
                         }
                     };
-                    program.set_value_name(var_ptr, Some(format!("@{}", ident.content,)));
-                    var_ptr
+                    program.set_value_name(var_addr, Some(format!("@{}", ident.content,)));
+                    var_addr
                 }
             };
 
             // Add an entry in the symbol table.
             my_ir_generator_info.symbol_tables.insert(
                 ident.content.clone(),
-                SymbolTableEntry::Variable(var_type.clone(), final_var_ptr),
+                SymbolTableEntry::Variable(var_type.clone(), final_var_addr),
             );
         }
         Ok(IRBuildResult::OK)

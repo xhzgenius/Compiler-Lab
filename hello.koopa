@@ -1,4 +1,4 @@
-global @a = alloc [i32, 10], zeroinit
+global @a = alloc [[i32, 5], 5], zeroinit
 
 decl @getint(): i32
 
@@ -16,9 +16,17 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @main(): i32 {
+fun @func(%a_param: *[i32, 5]): i32 {
 %0:
-  %1 = getelemptr @a, 0
-  store 1, %1
+  @a_0 = alloc *[i32, 5]
+  store %a_param, @a_0
+  ret
+}
+
+fun @main(): i32 {
+%1:
+  %2 = getelemptr @a, 0
+  %3 = call @func(%2)
+  call @putint(%3)
   ret 0
 }
