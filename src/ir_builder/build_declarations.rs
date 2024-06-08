@@ -19,11 +19,15 @@ impl IRBuildable for FuncDef {
         // Tell Koopa IR its return type and params.
         let return_type = Type::get(return_type.content.clone());
         let mut koopa_ir_params = Vec::<(Option<String>, Type)>::new();
-        for FuncFParam::Default(btype, ident) in params {
-            koopa_ir_params.push((
-                Some(format!("%{}_param", &ident.content)),
-                Type::get(btype.content.clone()),
-            ));
+        for FuncFParam::Default(btype, ident, possible_shape_exps) in params {
+            let param_type = match possible_shape_exps {
+                Some(shape_exps) => {
+                    let shape = build_shape(shape_exps, program, my_ir_generator_info)?;
+                    Type::get_pointer(Type::get(get_array_type(btype, &shape)))
+                }
+                None => Type::get(btype.content.clone()),
+            };
+            koopa_ir_params.push((Some(format!("%{}_param", &ident.content)), param_type));
         }
         let func = program.new_func(FunctionData::with_param_names(
             format!("@{}", func_id.content),
@@ -56,11 +60,18 @@ impl IRBuildable for FuncDef {
 
         my_ir_generator_info.symbol_tables.add_new_table();
         for idx in 0..program.func(func).params().len() {
-            let FuncFParam::Default(btype, ident) = &params[idx];
+            let FuncFParam::Default(btype, ident, possible_shape_exps) = &params[idx];
             let real_param = program.func(func).params()[idx];
             // Allocate form params.
-            let form_param = create_new_local_value(program, my_ir_generator_info)
-                .alloc(Type::get(btype.content.clone()));
+            let form_param_type = match possible_shape_exps {
+                Some(shape_exps) => {
+                    let shape = build_shape(shape_exps, program, my_ir_generator_info)?;
+                    Type::get_pointer(Type::get(get_array_type(btype, &shape)))
+                }
+                None => Type::get(btype.content.clone()),
+            };
+            let form_param =
+                create_new_local_value(program, my_ir_generator_info).alloc(form_param_type);
             program
                 .func_mut(func)
                 .dfg_mut()
@@ -156,36 +167,39 @@ impl InitVal {
             },
             InitVal::Aggregate(aggr) => {
                 let mut elems = vec![];
-                let mut shape_cnt = Vec::<usize>::new();
-                for _ in 0..shape.len() {
-                    shape_cnt.push(0);
-                }
+                // let mut shape_cnt = Vec::<usize>::new();
+                // for _ in 0..shape.len() {
+                //     shape_cnt.push(0);
+                // }
                 for initval in aggr {
                     // Decide which dim to aggregate.
-                    let mut curr_possible_dim = shape.len();
-                    for dim in (0..shape.len()).rev() {
-                        if shape_cnt[dim] == 0 {
-                            curr_possible_dim -= 1;
-                        } else {
-                            break;
-                        }
-                    }
-                    let curr_element_shape = &shape[curr_possible_dim..shape.len()];
-                    let elem = match initval.build(curr_element_shape, program, my_ir_generator_info)? {
-                        IRInitValBuildResult::Const(int) => {
-                            if is_global {
-                                program.new_value().integer(int)
-                            } else {
-                                create_new_local_value(program, my_ir_generator_info).integer(int)
+                    // let mut curr_possible_dim = shape.len();
+                    // for dim in (0..shape.len()).rev() {
+                    //     if shape_cnt[dim] == 0 {
+                    //         curr_possible_dim -= 1;
+                    //     } else {
+                    //         break;
+                    //     }
+                    // }
+                    let curr_element_shape = &shape[..shape.len() - 1];
+                    // let curr_element_shape = &shape[curr_possible_dim..shape.len()];
+                    let elem =
+                        match initval.build(curr_element_shape, program, my_ir_generator_info)? {
+                            IRInitValBuildResult::Const(int) => {
+                                if is_global {
+                                    program.new_value().integer(int)
+                                } else {
+                                    create_new_local_value(program, my_ir_generator_info)
+                                        .integer(int)
+                                }
                             }
-                        }
-                        IRInitValBuildResult::Var(_) => {
-                            return Err(format!("Aggregate cannot have a variable in it!"))
-                        }
-                        IRInitValBuildResult::Aggregate(value) => value,
-                    };
+                            IRInitValBuildResult::Var(_) => {
+                                return Err(format!("Aggregate cannot have a variable in it!"))
+                            }
+                            IRInitValBuildResult::Aggregate(value) => value,
+                        };
                     elems.push(elem);
-                    shape_cnt[curr_possible_dim] += 1;
+                    // shape_cnt[curr_possible_dim] += 1;
                 }
                 if is_global {
                     Ok(IRInitValBuildResult::Aggregate(

@@ -16,11 +16,18 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @main(): i32 {
+fun @f(%param_param: *i32) {
 %0:
+  @param = alloc *i32
+  store %param_param, @param
+  ret
+}
+
+fun @main(): i32 {
+%1:
   @arr = alloc [i32, 5]
   store {1, 2, 3, 4, 5}, @arr
-  %1 = getelemptr @arr, 2
-  %2 = load %1
-  ret %2
+  %2 = getelemptr @arr, 0
+  call @f(%2)
+  ret
 }

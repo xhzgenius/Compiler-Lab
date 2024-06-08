@@ -11,7 +11,7 @@
 //! ======================================================
 //! FuncDef       ::= FuncType IDENT "(" [FuncFParams] ")" Block;
 //! FuncFParams   ::= FuncFParam {"," FuncFParam};
-//! FuncFParam    ::= BType IDENT;
+//! FuncFParam    ::= BType IDENT ["[" "]" {"[" Exp "]"}]; // Exp should be const
 //!
 //! Block         ::= "{" {BlockItem} "}";
 //! BlockItem     ::= Decl | Stmt;

@@ -49,7 +49,10 @@ FuncFParams: Vec<FuncFParam> = {
   }
 }
 
-FuncFParam: FuncFParam = <b: BType> <i: IDENT> => FuncFParam::Default(b, i);
+FuncFParam: FuncFParam = {
+  <b: BType> <i: IDENT> => FuncFParam::Default(b, i, None),
+  <b: BType> <i: IDENT> "[" "]" <indexes: ("[" <Exp> "]")*> => FuncFParam::Default(b, i, Some(indexes)),
+}
 
 FuncRParams: Vec<Exp> = {
   <e: Exp> <es: ("," <Exp>)*> => {

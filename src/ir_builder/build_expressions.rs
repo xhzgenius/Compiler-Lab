@@ -1,7 +1,7 @@
 //! Build a single component into Koopa IR.
 
 use crate::ast_def::expressions::*;
-use koopa::ir::{builder_traits::*, Program, Type, Value};
+use koopa::ir::{builder_traits::*, Program, Type, TypeKind, Value};
 
 use super::{
     create_new_block, create_new_local_value, get_element_in_ndarray, get_valuedata,
@@ -460,12 +460,21 @@ impl IRExpBuildable for UnaryExp {
                         IRExpBuildResult::Value(v) => v,
                     };
                     // Here the real_param can only be local.
-                    if get_valuedata(real_param, program, my_ir_generator_info).ty()
-                        != program.func(func).dfg().value(func_decl_params[i]).ty()
-                    {
+                    let form_param_type = program
+                        .func(func)
+                        .dfg()
+                        .value(func_decl_params[i])
+                        .ty()
+                        .clone();
+                    let real_param_type =
+                        get_valuedata(real_param, program, my_ir_generator_info)
+                            .ty()
+                            .clone();
+                    if real_param_type != form_param_type {
                         return Err(format!(
-                            "The parameter type of function '{}' is incorrect!",
-                            &func_id.content
+                            "The parameter type of function '{}' is incorrect! Wanted {}, but got {}.",
+                            &func_id.content,
+                            form_param_type, real_param_type
                         ));
                     }
                     real_params.push(real_param);
@@ -492,11 +501,43 @@ impl IRExpBuildable for PrimaryExp {
                 match result {
                     IRExpBuildResult::Const(_int) => Ok(result),
                     IRExpBuildResult::Value(ptr) => {
-                        // If the PrimaryExp is a variable, then load it.
-                        let load_inst =
-                            create_new_local_value(program, my_ir_generator_info).load(ptr);
-                        insert_local_instructions(program, my_ir_generator_info, [load_inst]);
-                        Ok(IRExpBuildResult::Value(load_inst))
+                        match get_valuedata(ptr, program, my_ir_generator_info)
+                            .ty()
+                            .kind()
+                        {
+                            TypeKind::Pointer(base_type) => {
+                                // If the PrimaryExp is an array, convert it to a pointer.
+                                if let TypeKind::Array(_, _) = base_type.kind() {
+                                    let zero =
+                                        create_new_local_value(program, my_ir_generator_info)
+                                            .integer(0);
+                                    let pointer_to_index0 =
+                                        create_new_local_value(program, my_ir_generator_info)
+                                            .get_elem_ptr(ptr, zero);
+                                    insert_local_instructions(
+                                        program,
+                                        my_ir_generator_info,
+                                        [pointer_to_index0],
+                                    );
+                                    Ok(IRExpBuildResult::Value(pointer_to_index0))
+                                }
+                                // Else if the PrimaryExp is a variable, then load it.
+                                else {
+                                    let load_inst =
+                                        create_new_local_value(program, my_ir_generator_info)
+                                            .load(ptr);
+                                    insert_local_instructions(
+                                        program,
+                                        my_ir_generator_info,
+                                        [load_inst],
+                                    );
+                                    Ok(IRExpBuildResult::Value(load_inst))
+                                }
+                            }
+                            _ => {
+                                panic!("LVal (as a PrimaryExp) must be a pointer to something!")
+                            }
+                        }
                     }
                 }
             }
@@ -522,7 +563,7 @@ impl IRExpBuildable for LVal {
                     // A common variable
                     Ok(IRExpBuildResult::Value(ptr))
                 } else {
-                    // An array. Requires ptr to be a pointer.
+                    // An array. Requires ptr to be a pointer to an array or a pointer to the base type.
                     let mut index_values = vec![];
                     for exp in index_exps {
                         let build = exp.build(program, my_ir_generator_info)?;

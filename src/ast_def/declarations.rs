@@ -12,7 +12,7 @@ pub enum FuncDef {
 
 #[derive(Debug)]
 pub enum FuncFParam {
-    Default(BType, IDENT),
+    Default(BType, IDENT, Option<Vec<Exp>>),
 }
 
 #[derive(Debug)]
