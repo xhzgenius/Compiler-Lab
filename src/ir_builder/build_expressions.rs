@@ -22,36 +22,16 @@ pub trait IRExpBuildable {
     ) -> Result<IRExpBuildResult, String>;
 }
 
-impl IRExpBuildable for ConstInitVal {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRExpBuildResult, String> {
-        let ConstInitVal::ConstExp(c) = self;
-        c.build(program, my_ir_generator_info)
-    }
-}
-
-impl IRExpBuildable for ConstExp {
-    fn build(
-        &self,
-        program: &mut Program,
-        my_ir_generator_info: &mut MyIRGeneratorInfo,
-    ) -> Result<IRExpBuildResult, String> {
-        let ConstExp::Exp(exp) = self;
-        exp.build(program, my_ir_generator_info)
-    }
-}
-
 impl IRExpBuildable for InitVal {
     fn build(
         &self,
         program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRExpBuildResult, String> {
-        let InitVal::Exp(exp) = self;
-        exp.build(program, my_ir_generator_info)
+        match self {
+            InitVal::Exp(exp) => exp.build(program, my_ir_generator_info),
+            InitVal::Aggregate(aggr) => todo!(),
+        }
     }
 }
 
@@ -527,16 +507,14 @@ impl IRExpBuildable for LVal {
         _program: &mut Program,
         my_ir_generator_info: &mut MyIRGeneratorInfo,
     ) -> Result<IRExpBuildResult, String> {
-        match self {
-            LVal::IDENT(ident) => match my_ir_generator_info.symbol_tables.get(&ident.content) {
-                Some(SymbolTableEntry::Variable(_lval_type, ptr)) => {
-                    Ok(IRExpBuildResult::Value(*ptr))
-                }
-                Some(SymbolTableEntry::Constant(_lval_type, values)) => {
-                    Ok(IRExpBuildResult::Const(values[0]))
-                }
-                None => Err(format!("Undeclared symbol: {}", ident.content)),
-            },
+        let LVal::Default(ident, indexes) = self;
+        todo!();
+        match my_ir_generator_info.symbol_tables.get(&ident.content) {
+            Some(SymbolTableEntry::Variable(_lval_type, ptr)) => Ok(IRExpBuildResult::Value(*ptr)),
+            Some(SymbolTableEntry::Constant(_lval_type, values)) => {
+                Ok(IRExpBuildResult::Const(values[0]))
+            }
+            None => Err(format!("Undeclared symbol: {}", ident.content)),
         }
     }
 }

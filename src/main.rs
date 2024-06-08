@@ -40,7 +40,7 @@ fn main() -> std::io::Result<()> {
             std::fs::write(output, text_generator.writer())?;
             Ok(())
         }
-        "-riscv" => {
+        "-riscv" | "-perf" => {
             let mut output_file = std::fs::File::create(output)?;
             assembly_builder::generate_assembly(&ir, &mut output_file)
                 .expect("Assembly builder error");

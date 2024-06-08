@@ -4,18 +4,9 @@
 use super::symbols::*;
 
 #[derive(Debug)]
-pub enum ConstInitVal {
-    ConstExp(ConstExp),
-}
-
-#[derive(Debug)]
-pub enum ConstExp {
-    Exp(Exp),
-}
-
-#[derive(Debug)]
 pub enum InitVal {
     Exp(Exp),
+    Aggregate(Vec<Box<InitVal>>),
 }
 
 #[derive(Debug)]
@@ -84,7 +75,7 @@ pub enum PrimaryExp {
 
 #[derive(Debug)]
 pub enum LVal {
-    IDENT(IDENT),
+    Default(IDENT, Vec<Exp>),
 }
 
 #[derive(Debug)]

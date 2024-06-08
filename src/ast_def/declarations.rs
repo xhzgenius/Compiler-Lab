@@ -39,7 +39,7 @@ pub enum ConstDecl {
 
 #[derive(Debug)]
 pub enum ConstDef {
-    Default(IDENT, ConstInitVal),
+    Default(IDENT, Vec<Exp>, InitVal),
 }
 
 #[derive(Debug)]
@@ -49,5 +49,5 @@ pub enum VarDecl {
 
 #[derive(Debug)]
 pub enum VarDef {
-    Default(IDENT, Option<InitVal>),
+    Default(IDENT, Vec<Exp>, Option<InitVal>),
 }

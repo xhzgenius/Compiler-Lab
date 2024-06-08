@@ -148,11 +148,12 @@ impl IRBuildable for ConstDecl {
         let ConstDecl::Default(btype, const_defs) = self;
         let const_type = &btype.content;
         for const_def in const_defs {
-            let ConstDef::Default(ident, rhs) = const_def;
+            let ConstDef::Default(ident, shape, rhs) = const_def;
             let result = rhs.build(program, my_ir_generator_info)?;
             // Add an entry in the symbol table.
             match result {
                 IRExpBuildResult::Const(int) => {
+                    todo!();
                     my_ir_generator_info.symbol_tables.insert(
                         ident.content.clone(),
                         SymbolTableEntry::Constant(const_type.clone(), vec![int]),
@@ -180,7 +181,8 @@ impl IRBuildable for VarDecl {
         let var_type = &btype.content;
 
         for var_def in var_defs {
-            let VarDef::Default(ident, possible_rhs) = var_def;
+            let VarDef::Default(ident, shape, possible_rhs) = var_def;
+            todo!();
 
             // Allocate the new variable and get its Koopa IR Value.
             let final_var_ptr = match my_ir_generator_info.curr_func {

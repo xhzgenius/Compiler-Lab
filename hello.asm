@@ -1,4 +1,7 @@
   .data
+data:
+  .zero 4
+
   .text
   .global fib
 fib:
@@ -18,7 +21,7 @@ fib:
 # Branch(Branch { cond: Value(1073741829), true_bb: BasicBlock(3), false_bb: BasicBlock(2), true_args: [], false_args: [] })
 # Save global variables.
 # Save local variables.
-  sw	t0, 0(sp)
+  sw	t0, 8(sp)
   bnez	t1, .bb1_if_block_1
   j	.bb0_if_block_end
 
@@ -31,7 +34,7 @@ fib:
 
 .bb0_if_block_end:
 # Load(Load { src: Value(1073741825) })
-  lw	t0, 0(sp)
+  lw	t0, 8(sp)
   mv	t1, t0
 # Binary(Binary { op: Eq, lhs: Value(1073741833), rhs: Value(1073741834) })
   li	t2, 1
@@ -40,7 +43,7 @@ fib:
 # Branch(Branch { cond: Value(1073741835), true_bb: BasicBlock(5), false_bb: BasicBlock(4), true_args: [], false_args: [] })
 # Save global variables.
 # Save local variables.
-  sw	t0, 0(sp)
+  sw	t0, 8(sp)
   bnez	t1, .bb3_if_block_1
   j	.bb2_if_block_end
 
@@ -54,7 +57,7 @@ fib:
 .bb2_if_block_end:
 # Alloc(Alloc)
 # Load(Load { src: Value(1073741825) })
-  lw	t0, 0(sp)
+  lw	t0, 8(sp)
   mv	t1, t0
 # Binary(Binary { op: Sub, lhs: Value(1073741840), rhs: Value(1073741841) })
   li	t2, 1
@@ -73,19 +76,19 @@ fib:
   mv	t1, t2
 # Call(Call { callee: Function(9), args: [Value(1073741849)] })
   mv	a0, t1
-  sw	t0, 0(sp)
-  sw	t2, 16(sp)
-  sw	t3, 8(sp)
+  sw	t0, 8(sp)
+  sw	t2, 0(sp)
+  sw	t3, 16(sp)
 # Save global variables.
   call	fib
   mv	t0, a0
 # Load(Load { src: Value(1073741844) })
-  lw	t1, 8(sp)
+  lw	t1, 16(sp)
   mv	t2, t1
 # Call(Call { callee: Function(9), args: [Value(1073741851)] })
   mv	a0, t2
   sw	t0, 44(sp)
-  sw	t1, 8(sp)
+  sw	t1, 16(sp)
 # Save global variables.
   call	fib
   mv	t0, a0

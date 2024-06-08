@@ -19,10 +19,15 @@
 //! Decl          ::= ConstDecl | VarDecl;
 //!
 //! ConstDecl     ::= "const" BType ConstDef {"," ConstDef} ";";
-//! ConstDef      ::= IDENT "=" ConstInitVal;
+//! ConstDef      ::= IDENT {"[" Exp "]"} "=" InitVal;
+//!                 // Exps and InitVal should be const. Checked at grammar level.
 //!
 //! VarDecl       ::= BType VarDef {"," VarDef} ";";
-//! VarDef        ::= IDENT | IDENT "=" InitVal; // If this VarDef is global, InitVal should be ConstInitVal.
+//! VarDef        ::= IDENT {"[" Exp "]"}
+//!                 | IDENT {"[" Exp "]"} "=" InitVal;
+//!                 // If this VarDef is global, InitVal should be const.
+//!                 // Exps in indexes should be const. Checked at grammar level.
+//!                 // This check is done in grammar analysis, not in syntax analysis.
 //!
 //! ======================================================
 //! Statements
@@ -46,9 +51,10 @@
 //! ======================================================
 //! Expressions
 //! ======================================================
-//! ConstInitVal  ::= ConstExp;
-//! ConstExp      ::= Exp;
-//! InitVal       ::= Exp;
+//! InitVal       ::= Exp
+//!                 | "{" "}"
+//!                 | "{" InitVal {"," InitVal} "}";
+//!                 // The check of "whether an exp is const" is done in grammar analysis.
 //!
 //! Exp         ::= LOrExp;
 //!
@@ -66,7 +72,7 @@
 //! UnaryOp     ::= "+" | "-" | "!";
 //! PrimaryExp  ::= "(" Exp ")" | LVal | Number;
 //!
-//! LVal        ::= IDENT;
+//! LVal        ::= IDENT {"[" Exp "]"};
 //! Number      ::= INTCONST;
 //!
 //! ======================================================

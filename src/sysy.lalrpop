@@ -83,11 +83,9 @@ ConstDecl: ConstDecl = "const" <b: BType> <c: ConstDef> <cs: ("," <ConstDef>)*> 
   ConstDecl::Default(b, vec)
 };
 
-ConstDef: ConstDef = <i: IDENT> "=" <c: ConstInitVal> => ConstDef::Default(i, c);
-
-ConstInitVal: ConstInitVal = <c: ConstExp> => ConstInitVal::ConstExp(c);
-
-ConstExp: ConstExp = <e: Exp> => ConstExp::Exp(e);
+ConstDef: ConstDef = { 
+  <i: IDENT> <shape: ("[" <Exp> "]")*> "=" <c: InitVal> => ConstDef::Default(i, shape, c),
+}
 
 VarDecl: VarDecl = <b: BType> <v: VarDef> <vs: ("," <VarDef>)*> ";" => {
   let mut vec = Vec::<VarDef>::new();
@@ -99,10 +97,21 @@ VarDecl: VarDecl = <b: BType> <v: VarDef> <vs: ("," <VarDef>)*> ";" => {
 };
 
 VarDef: VarDef = {
-  <i: IDENT> <val: ("=" <InitVal>)?> => VarDef::Default(i, val), 
+  <i: IDENT> <shape: ("[" <Exp> "]")*> <val: ("=" <InitVal>)?> => VarDef::Default(i, shape, val), 
 }
 
-InitVal: InitVal = <e: Exp> => InitVal::Exp(e);
+InitVal: InitVal = {
+  <e: Exp> => InitVal::Exp(e),
+  "{" "}" => InitVal::Aggregate(Vec::<Box<InitVal>>::new()),
+  "{" <val: InitVal> <vals: ("," <InitVal>)*> "}" => {
+    let mut vec = Vec::<Box<InitVal>>::new();
+    vec.push(Box::new(val));
+    for vall in vals {
+      vec.push(Box::new(vall));
+    }
+    InitVal::Aggregate(vec)
+  }
+}
 
 // ======================================================
 // Statements
@@ -203,7 +212,7 @@ PrimaryExp: PrimaryExp = {
 }
 
 LVal: LVal = {
-  <i: IDENT> => LVal::IDENT(i), 
+  <i: IDENT> <indexes: ("[" <Exp> "]")*> => LVal::Default(i, indexes), 
 }
 
 Number: Number = {

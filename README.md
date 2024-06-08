@@ -516,7 +516,7 @@ decl @stoptime()
 
 Koopa IR 中，变量分为两类：一类是定义的变量（包括全局变量），以 @ 开头，每次使用必定伴随 load 和 store ；另一类是临时变量，以 % 开头，会被唯一赋值/使用一次。如果把两类统一用 LRU Cache 来保存，就会出现上述的不同条件分支中 Cache 位置不同的错误。
 
-解决办法：在出基本块时，保存所有的定义变量。
+解决办法：在出基本块时（也即遇到 Return Jump Branch 指令时），保存所有的定义变量；遇到 Call 指令时，保存所有的全局变量。
 
 对于临时变量，用完就从表里删除。
 
@@ -533,6 +533,16 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 ```
 docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv8 /root/compiler
 ```
+
+这些测试是远远不够的，因此还是得使用开头提到过的自己的测试样例。
+
+#### Lv.9 数组
+
+我去，更大的来了
+
+##### 写自己的代码
+
+首先更新文法定义。一共三处：数组变量声明、数组初始化表达式，以及数组左值。
 
 
 
