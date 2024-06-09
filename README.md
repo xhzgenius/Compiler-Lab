@@ -560,6 +560,12 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 在赋值语句的 `build` 阶段，检查左值是否为地址，如果不是的话返回错误。
 
+###### 初始化表达式
+
+妈的，这玩意真的难搞
+
+我写了个递归函数处理这玩意。详见代码吧。
+
 ###### 增加更多检查与错误信息（语义分析阶段）
 
 函数调用的参数数量检查/参数类型检查，若不通过则返回错误。
@@ -579,6 +585,31 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 数组的初始化时，若aggregate对齐错误/出现非常量表达式，返回错误。
 
 `break` 或者 `continue` 语句出现在了错误的位置，返回错误。
+
+###### 拆分局部数组的初始化
+
+为了后面部分考虑，把局部数组的初始化从原来的一条 `store` 指令拆分成了多条 `store` 指令，每条放一个数。
+
+###### 目标代码（RISC-V汇编代码）生成
+
+目前进度：全局数组初始化没写，GetPtr没写。
+
+有些 Value 莫名其妙找不到。哦，原来是本来就从表中移除的临时变量啊，那没事了。
+
+##### 本地测试
+
+测试 Koopa IR:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -koopa -s lv9 /root/compiler
+```
+
+测试 RISC-V 汇编:
+
+```
+docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-dev autotest -riscv -s lv9 /root/compiler
+```
+
 
 ---
 

@@ -1,5 +1,17 @@
-int main(){
-    int a[4][2]={1,2,3,4,5,6,7,8};
-    // int b[4][2]={{a[0][0],a[0][1]},{3,4},{5,6},{7,8}};
-    return 0;
+// duplicate names with global array variables and local int variable
+int a[2];
+
+int func(int array[]) {
+	a[0] = 1;
+	return array[3 - a[0]];
+}
+
+int main() {
+	int a;
+	int array[3];
+	array[0] = (-1);
+	array[1] = 4;
+	array[2] = 8;
+	a = func(array);
+	return (a + array[1]);
 }

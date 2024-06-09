@@ -10,6 +10,10 @@ use lalrpop_util::lalrpop_mod;
 lalrpop_mod!(sysy);
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // Compiler configuration:
+    // Set the pointer size in our compiled code to 4. (32 bits)
+    koopa::ir::Type::set_ptr_size(4);
+
     // 解析命令行参数
     let mut args = std::env::args();
     args.next();

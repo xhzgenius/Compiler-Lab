@@ -31,9 +31,8 @@ const REGISTER_FOR_ARGS: [usize; 8] = [10, 11, 12, 13, 14, 15, 16, 17];
 const ARG_SIZE: usize = 4;
 
 const REG_A0: usize = 10;
-
 const REG_SP: usize = 2;
-
+const REG_RA: usize = 1;
 /// This register is for temporary integers only!
 const REG_X31: usize = 31;
 
@@ -108,19 +107,6 @@ impl MyBBValueTable<'_> {
             self.__free_user(reg);
         }
         self.local_value_location.remove(&value);
-    }
-
-    fn assign_v1_to_v2(&mut self, v1: Value, v2: Value) -> Vec<String> {
-        let mut codes = vec![];
-        let (reg1, codes1) = self.want_to_visit_value(v1, true, None);
-        let (reg2, codes2) = self.want_to_visit_value(v2, false, None);
-        codes.extend(codes1);
-        codes.extend(codes2);
-        codes.push(format!(
-            "  mv\t{}, {}",
-            REGISTER_NAMES[reg2], REGISTER_NAMES[reg1]
-        ));
-        codes
     }
 
     fn store_with_offset(&mut self, reg: usize, offset: isize) -> Vec<String> {
@@ -234,18 +220,16 @@ impl MyBBValueTable<'_> {
         }
         // Local or temp value
         else {
-            codes.extend(
-                self.store_with_offset(
+            let location = self.local_value_location.get(&kicked_value);
+            if location.is_none() {
+                // Already removed. No need to save it.
+            } else {
+                // Save it.
+                codes.extend(self.store_with_offset(
                     reg,
-                    *self.local_value_location.get(&kicked_value).expect(
-                        format!(
-                            "Cannot find local or temp value {:?} in table! Impossible.",
-                            value_data
-                        )
-                        .as_str(),
-                    ) as isize,
-                ),
-            );
+                    *self.local_value_location.get(&kicked_value).unwrap() as isize,
+                ));
+            }
         }
 
         self.__free_user(reg);
@@ -306,7 +290,7 @@ impl MyBBValueTable<'_> {
                 Some(reg_dst) => {
                     if src_reg != reg_dst {
                         self.__update_user(reg_dst, value);
-                        self.__free_user(src_reg);
+                        // self.__free_user(src_reg); Don't do that! May be used several times.
                         return (
                             reg_dst,
                             vec![format!(
@@ -350,6 +334,49 @@ impl MyBBValueTable<'_> {
             }
         }
         self.__update_user(reg, value);
+        (reg, codes)
+    }
+
+    fn assign_v1_to_v2(&mut self, v1: Value, v2: Value) -> Vec<String> {
+        let mut codes = vec![];
+        let (reg1, codes1) = self.want_to_visit_value(v1, true, None);
+        let (reg2, codes2) = self.want_to_visit_value(v2, false, None);
+        codes.extend(codes1);
+        codes.extend(codes2);
+        codes.push(format!(
+            "  mv\t{}, {}",
+            REGISTER_NAMES[reg2], REGISTER_NAMES[reg1]
+        ));
+        codes
+    }
+
+    /// Example:
+    /// getelemptr @a, 114 -> The absolute location of @a in memory.
+    /// getelemptr %0, 514 -> The value of %0 (which is an address).
+    fn get_absolute_location(&mut self, value: Value) -> (usize, Vec<String>) {
+        let (reg, mut codes) = self.get_tmp_reg();
+        if value.is_global() {
+            codes.push(format!(
+                "  la\t{}, {}",
+                REGISTER_NAMES[reg],
+                &self.program.borrow_value(value).name().clone().unwrap()[1..]
+            ));
+        } else {
+            if self.is_temp_value(value) {
+                let (_, codes_to_visit) = self.want_to_visit_value(value, true, Some(reg));
+                codes.extend(codes_to_visit);
+            } else {
+                let offset = *self.local_value_location.get(&value).unwrap();
+                if offset < MAX_SHORT_INT as usize {
+                    codes.push(format!("  addi\t{}, sp, {}", REGISTER_NAMES[reg], offset));
+                } else {
+                    codes.push(format!(
+                        "  li\t{}, {}\n  add\t{}, sp, {}",
+                        REGISTER_NAMES[reg], offset, REGISTER_NAMES[reg], REGISTER_NAMES[reg]
+                    ));
+                }
+            };
+        }
         (reg, codes)
     }
 }

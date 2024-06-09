@@ -1,137 +1,132 @@
   .data
-data:
-  .zero 4
+a:
+  .zero 8
 
   .text
-  .global fib
-fib:
-  addi	sp, sp, -64
-  sw	ra, 60(sp)
+  .global func
+func:
+  addi	sp, sp, -48
+  sw	ra, 44(sp)
 
-.fib_body:
+.func_body:
 # Alloc(Alloc)
 # Store(Store { value: Value(1073741824), dest: Value(1073741825) })
   mv	t0, a0
+# GetElemPtr(GetElemPtr { src: Value(2), index: Value(1073741827) })
+  li	t1, 0
+  la	t2, a
+  li	x31, 4
+  mul	x31, t1, x31
+  add	t2, t2, x31
+# Store(Store { value: Value(1073741829), dest: Value(1073741828) })
+  li	t1, 1
+  sw	t1, 0(t2)
+# GetElemPtr(GetElemPtr { src: Value(2), index: Value(1073741831) })
+  li	t3, 0
+  la	t4, a
+  li	x31, 4
+  mul	x31, t3, x31
+  add	t4, t4, x31
+# Load(Load { src: Value(1073741832) })
+  lw	t3, 12(sp)
+  lw	t3, 0(t4)
+# Binary(Binary { op: Sub, lhs: Value(1073741834), rhs: Value(1073741833) })
+  li	t5, 3
+  sub	t3, t5, t3
 # Load(Load { src: Value(1073741825) })
-  mv	t1, t0
-# Binary(Binary { op: Eq, lhs: Value(1073741827), rhs: Value(1073741828) })
-  li	t2, 0
-  xor	t1, t1, t2
-  seqz	t1, t1
-# Branch(Branch { cond: Value(1073741829), true_bb: BasicBlock(3), false_bb: BasicBlock(2), true_args: [], false_args: [] })
+  mv	t5, t0
+# GetPtr(GetPtr { src: Value(1073741836), index: Value(1073741835) })
+  li	x31, 4
+  mul	x31, t3, x31
+  add	t5, t5, x31
+# Load(Load { src: Value(1073741837) })
+  lw	t3, 28(sp)
+  lw	t3, 0(t5)
+# Return(Return { value: Some(Value(1073741838)) })
+  mv	a0, t3
 # Save global variables.
 # Save local variables.
-  sw	t0, 8(sp)
-  bnez	t1, .bb1_if_block_1
-  j	.bb0_if_block_end
+  sw	t0, 0(sp)
+  j	.func_ret
 
-.bb1_if_block_1:
-# Return(Return { value: Some(Value(1073741830)) })
-  li	a0, 0
-# Save global variables.
-# Save local variables.
-  j	.fib_ret
-
-.bb0_if_block_end:
-# Load(Load { src: Value(1073741825) })
-  lw	t0, 8(sp)
-  mv	t1, t0
-# Binary(Binary { op: Eq, lhs: Value(1073741833), rhs: Value(1073741834) })
-  li	t2, 1
-  xor	t1, t1, t2
-  seqz	t1, t1
-# Branch(Branch { cond: Value(1073741835), true_bb: BasicBlock(5), false_bb: BasicBlock(4), true_args: [], false_args: [] })
-# Save global variables.
-# Save local variables.
-  sw	t0, 8(sp)
-  bnez	t1, .bb3_if_block_1
-  j	.bb2_if_block_end
-
-.bb3_if_block_1:
-# Return(Return { value: Some(Value(1073741836)) })
-  li	a0, 1
-# Save global variables.
-# Save local variables.
-  j	.fib_ret
-
-.bb2_if_block_end:
-# Alloc(Alloc)
-# Load(Load { src: Value(1073741825) })
-  lw	t0, 8(sp)
-  mv	t1, t0
-# Binary(Binary { op: Sub, lhs: Value(1073741840), rhs: Value(1073741841) })
-  li	t2, 1
-  sub	t1, t1, t2
-# Store(Store { value: Value(1073741842), dest: Value(1073741839) })
-  mv	t2, t1
-# Alloc(Alloc)
-# Load(Load { src: Value(1073741825) })
-  mv	t1, t0
-# Binary(Binary { op: Sub, lhs: Value(1073741845), rhs: Value(1073741846) })
-  li	t3, 2
-  sub	t1, t1, t3
-# Store(Store { value: Value(1073741847), dest: Value(1073741844) })
-  mv	t3, t1
-# Load(Load { src: Value(1073741839) })
-  mv	t1, t2
-# Call(Call { callee: Function(9), args: [Value(1073741849)] })
-  mv	a0, t1
-  sw	t0, 8(sp)
-  sw	t2, 0(sp)
-  sw	t3, 16(sp)
-# Save global variables.
-  call	fib
-  mv	t0, a0
-# Load(Load { src: Value(1073741844) })
-  lw	t1, 16(sp)
-  mv	t2, t1
-# Call(Call { callee: Function(9), args: [Value(1073741851)] })
-  mv	a0, t2
-  sw	t0, 44(sp)
-  sw	t1, 16(sp)
-# Save global variables.
-  call	fib
-  mv	t0, a0
-# Binary(Binary { op: Add, lhs: Value(1073741850), rhs: Value(1073741852) })
-  lw	t1, 44(sp)
-  add	t0, t1, t0
-# Return(Return { value: Some(Value(1073741853)) })
-  mv	a0, t0
-# Save global variables.
-# Save local variables.
-  j	.fib_ret
-
-.fib_ret:
-  lw	ra, 60(sp)
-  addi	sp, sp, 64
+.func_ret:
+  lw	ra, 44(sp)
+  addi	sp, sp, 48
   ret
 
   .global main
 main:
-  addi	sp, sp, -32
-  sw	ra, 28(sp)
+  addi	sp, sp, -48
+  sw	ra, 44(sp)
 
 .main_body:
 # Alloc(Alloc)
-# Store(Store { value: Value(1073741856), dest: Value(1073741855) })
-  li	t0, 10
-  mv	t1, t0
-# Load(Load { src: Value(1073741855) })
-  mv	t0, t1
-# Call(Call { callee: Function(9), args: [Value(1073741858)] })
+# Alloc(Alloc)
+# GetElemPtr(GetElemPtr { src: Value(1073741841), index: Value(1073741842) })
+  li	t0, 0
+  addi	t1, sp, 0
+  li	x31, 4
+  mul	x31, t0, x31
+  add	t1, t1, x31
+# Store(Store { value: Value(1073741844), dest: Value(1073741843) })
+  li	t0, -1
+  sw	t0, 0(t1)
+# GetElemPtr(GetElemPtr { src: Value(1073741841), index: Value(1073741846) })
+  li	t2, 1
+  addi	t3, sp, 0
+  li	x31, 4
+  mul	x31, t2, x31
+  add	t3, t3, x31
+# Store(Store { value: Value(1073741848), dest: Value(1073741847) })
+  li	t2, 4
+  sw	t2, 0(t3)
+# GetElemPtr(GetElemPtr { src: Value(1073741841), index: Value(1073741850) })
+  li	t4, 2
+  addi	t5, sp, 0
+  li	x31, 4
+  mul	x31, t4, x31
+  add	t5, t5, x31
+# Store(Store { value: Value(1073741852), dest: Value(1073741851) })
+  li	t4, 8
+  sw	t4, 0(t5)
+# GetElemPtr(GetElemPtr { src: Value(1073741841), index: Value(1073741854) })
+  sw	t1, 8(sp)
+  li	t1, 0
+  addi	t0, sp, 0
+  li	x31, 4
+  mul	x31, t1, x31
+  add	t0, t0, x31
+# Call(Call { callee: Function(9), args: [Value(1073741855)] })
   mv	a0, t0
-  sw	t1, 0(sp)
+  sw	t3, 12(sp)
+  sw	t5, 16(sp)
 # Save global variables.
-  call	fib
+  call	func
   mv	t0, a0
-# Return(Return { value: Some(Value(1073741859)) })
+# Store(Store { value: Value(1073741856), dest: Value(1073741840) })
+  mv	t1, t0
+# Load(Load { src: Value(1073741840) })
+  mv	t0, t1
+# GetElemPtr(GetElemPtr { src: Value(1073741841), index: Value(1073741859) })
+  li	t2, 1
+  addi	t3, sp, 0
+  li	x31, 4
+  mul	x31, t2, x31
+  add	t3, t3, x31
+# Load(Load { src: Value(1073741860) })
+  lw	t2, 36(sp)
+  lw	t2, 0(t3)
+# Binary(Binary { op: Add, lhs: Value(1073741858), rhs: Value(1073741861) })
+  add	t0, t0, t2
+# Return(Return { value: Some(Value(1073741862)) })
   mv	a0, t0
 # Save global variables.
 # Save local variables.
+  sw	t1, 4(sp)
   j	.main_ret
 
 .main_ret:
-  lw	ra, 28(sp)
-  addi	sp, sp, 32
+  lw	ra, 44(sp)
+  addi	sp, sp, 48
   ret
 

@@ -1,3 +1,5 @@
+global @a = alloc [i32, 2], zeroinit
+
 decl @getint(): i32
 
 decl @getch(): i32
@@ -14,28 +16,37 @@ decl @starttime()
 
 decl @stoptime()
 
-fun @main(): i32 {
+fun @func(%array_param: *i32): i32 {
 %0:
-  @a = alloc [[i32, 2], 4]
+  @array = alloc *i32
+  store %array_param, @array
   %1 = getelemptr @a, 0
-  %2 = getelemptr %1, 0
-  store 1, %2
-  %3 = getelemptr %1, 1
-  store 2, %3
-  %4 = getelemptr @a, 1
-  %5 = getelemptr %4, 0
-  store 3, %5
-  %6 = getelemptr %4, 1
-  store 4, %6
-  %7 = getelemptr @a, 2
-  %8 = getelemptr %7, 0
-  store 5, %8
-  %9 = getelemptr %7, 1
-  store 6, %9
-  %10 = getelemptr @a, 3
-  %11 = getelemptr %10, 0
-  store 7, %11
-  %12 = getelemptr %10, 1
-  store 8, %12
-  ret 0
+  store 1, %1
+  %2 = getelemptr @a, 0
+  %3 = load %2
+  %4 = sub 3, %3
+  %5 = load @array
+  %6 = getptr %5, %4
+  %7 = load %6
+  ret %7
+}
+
+fun @main(): i32 {
+%8:
+  @a_0 = alloc i32
+  @array = alloc [i32, 3]
+  %9 = getelemptr @array, 0
+  store -1, %9
+  %10 = getelemptr @array, 1
+  store 4, %10
+  %11 = getelemptr @array, 2
+  store 8, %11
+  %12 = getelemptr @array, 0
+  %13 = call @func(%12)
+  store %13, @a_0
+  %14 = load @a_0
+  %15 = getelemptr @array, 1
+  %16 = load %15
+  %17 = add %14, %16
+  ret %17
 }

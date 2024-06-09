@@ -2,10 +2,12 @@
 
 use std::vec;
 
+use crate::assembly_builder::{REG_RA, REG_X31};
+
 use super::{
     MyBBValueTable, ARG_SIZE, REGISTER_FOR_ARGS, REGISTER_FOR_TEMP, REGISTER_NAMES, REG_A0, REG_SP,
 };
-use koopa::ir::{entities::ValueData, FunctionData, Program, ValueKind};
+use koopa::ir::{entities::ValueData, FunctionData, Program, Type};
 
 pub trait AssemblyBuildable {
     fn build(&self, program: &Program) -> Result<Vec<String>, String>;
@@ -164,16 +166,20 @@ impl AssemblyBuildable for ValueData {
     /// Used to handle global variable declarations.
     /// The ValueData's kind should be GlobalAlloc. Or it will panic.
     fn build(&self, program: &Program) -> Result<Vec<String>, String> {
-        if let ValueKind::GlobalAlloc(global) = self.kind() {
+        if let koopa::ir::ValueKind::GlobalAlloc(global) = self.kind() {
             let mut codes = vec![];
             codes.push(format!("{}:", &self.name().clone().unwrap()[1..]));
             let init_value_data = program.borrow_value(global.init());
             match init_value_data.kind() {
-                ValueKind::Integer(int) => {
+                koopa::ir::ValueKind::Integer(int) => {
                     codes.push(format!("  .word {}\n", int.value()));
                 }
-                ValueKind::ZeroInit(_) => {
+                koopa::ir::ValueKind::ZeroInit(_) => {
                     codes.push(format!("  .zero {}\n", init_value_data.ty().size()));
+                }
+                koopa::ir::ValueKind::Aggregate(_) => {
+                    codes.push(format!("  .zero {}\n", init_value_data.ty().size()));
+                    // TODO: init them one by one.
                 }
                 value_kind => panic!(
                     "Global variable {} has wrong kind of initialization: {:?}! ",
@@ -219,7 +225,7 @@ impl AssemblyBuildable for FunctionData {
                     continue;
                 }
                 let value_data = self.dfg().value(value);
-                if let ValueKind::Call(call) = value_data.kind() {
+                if let koopa::ir::ValueKind::Call(call) = value_data.kind() {
                     let mut arg_size = 0;
                     if call.args().len() > REGISTER_FOR_ARGS.len() {
                         for &_arg in &call.args()[REGISTER_FOR_ARGS.len()..] {
@@ -269,7 +275,8 @@ impl AssemblyBuildable for FunctionData {
         // (Currently no callee-saved registers need to be saved. )
 
         // Save registar ra. (Return address)
-        prologue_codes.push(format!("  sw\tra, {}(sp)", stack_frame_size - reg_ra_size));
+        prologue_codes
+            .extend(my_table.store_with_offset(REG_RA, (stack_frame_size - reg_ra_size) as isize));
 
         let mut body_codes = vec![];
         body_codes.push(format!("\n.{}_body:", &self.name()[1..]));
@@ -349,13 +356,42 @@ impl AssemblyBuildable for FunctionData {
 
                     // Store operation
                     koopa::ir::ValueKind::Store(store) => {
-                        body_codes.extend(my_table.assign_v1_to_v2(store.value(), store.dest()));
-                        my_table.remove_temp_value(store.value());
+                        if my_table.is_temp_value(store.dest()) {
+                            // Store to a definite location
+                            let (reg_v, codes_v) =
+                                my_table.want_to_visit_value(store.value(), true, None);
+                            let (reg_d, codes_d) =
+                                my_table.want_to_visit_value(store.dest(), true, None);
+                            body_codes.extend(codes_v);
+                            body_codes.extend(codes_d);
+                            body_codes.push(format!(
+                                "  sw\t{}, 0({})",
+                                REGISTER_NAMES[reg_v], REGISTER_NAMES[reg_d]
+                            ));
+                        } else {
+                            // Store to a local variable
+                            body_codes
+                                .extend(my_table.assign_v1_to_v2(store.value(), store.dest()));
+                            my_table.remove_temp_value(store.value());
+                        }
                     }
 
                     // Load operation
                     koopa::ir::ValueKind::Load(load) => {
-                        body_codes.extend(my_table.assign_v1_to_v2(load.src(), value));
+                        if my_table.is_temp_value(load.src()) {
+                            // Store to a definite location
+                            let (reg_s, codes_s) =
+                                my_table.want_to_visit_value(load.src(), true, None);
+                            let (reg_v, codes_v) = my_table.want_to_visit_value(value, true, None);
+                            body_codes.extend(codes_s);
+                            body_codes.extend(codes_v);
+                            body_codes.push(format!(
+                                "  lw\t{}, 0({})",
+                                REGISTER_NAMES[reg_v], REGISTER_NAMES[reg_s]
+                            ));
+                        } else {
+                            body_codes.extend(my_table.assign_v1_to_v2(load.src(), value));
+                        }
                     }
 
                     // Jump operation
@@ -433,8 +469,7 @@ impl AssemblyBuildable for FunctionData {
                                 my_table.want_to_visit_value(call.args()[i], true, None);
                             body_codes.extend(codes);
                             let offset = (i - REGISTER_FOR_ARGS.len()) * ARG_SIZE;
-                            body_codes
-                                .push(format!("  sw\t{}, {}(sp)", REGISTER_NAMES[reg], offset));
+                            body_codes.extend(my_table.store_with_offset(reg, offset as isize));
                             my_table.remove_temp_value(call.args()[i]);
                         }
 
@@ -458,12 +493,63 @@ impl AssemblyBuildable for FunctionData {
                         body_codes.extend(codes);
                     }
 
+                    koopa::ir::ValueKind::GetPtr(getptr) => {
+                        // Offset
+                        let (reg_o, codes_o) =
+                            my_table.want_to_visit_value(getptr.index(), true, None);
+                        body_codes.extend(codes_o);
+                        // Starting address
+                        let (reg_addr, codes_addr) =
+                            my_table.want_to_visit_value(getptr.src(), true, None);
+                        body_codes.extend(codes_addr);
+                        // Target address = Offset * ptr_size + Starting address
+                        body_codes.push(format!(
+                            "  li\t{}, {}\n  mul\t{}, {}, {}\n  add\t{}, {}, {}",
+                            REGISTER_NAMES[REG_X31],
+                            Type::get_pointer(Type::get_i32()).size(),
+                            REGISTER_NAMES[REG_X31],
+                            REGISTER_NAMES[reg_o],
+                            REGISTER_NAMES[REG_X31],
+                            REGISTER_NAMES[reg_addr],
+                            REGISTER_NAMES[reg_addr],
+                            REGISTER_NAMES[REG_X31],
+                        ));
+                        let (_, codes_result) =
+                            my_table.want_to_visit_value(value, false, Some(reg_addr));
+                        body_codes.extend(codes_result);
+                        my_table.remove_temp_value(getptr.index());
+                    }
+
+                    koopa::ir::ValueKind::GetElemPtr(getelemptr) => {
+                        // Offset
+                        let (reg_o, codes_o) =
+                            my_table.want_to_visit_value(getelemptr.index(), true, None);
+                        body_codes.extend(codes_o);
+                        // Starting address
+                        let (reg_addr, codes_addr) =
+                            my_table.get_absolute_location(getelemptr.src());
+                        body_codes.extend(codes_addr);
+                        // Target address = Offset * ptr_size + Starting address
+                        body_codes.push(format!(
+                            "  li\t{}, {}\n  mul\t{}, {}, {}\n  add\t{}, {}, {}",
+                            REGISTER_NAMES[REG_X31],
+                            Type::get_pointer(Type::get_i32()).size(),
+                            REGISTER_NAMES[REG_X31],
+                            REGISTER_NAMES[reg_o],
+                            REGISTER_NAMES[REG_X31],
+                            REGISTER_NAMES[reg_addr],
+                            REGISTER_NAMES[reg_addr],
+                            REGISTER_NAMES[REG_X31],
+                        ));
+                        let (_, codes_result) =
+                            my_table.want_to_visit_value(value, false, Some(reg_addr));
+                        body_codes.extend(codes_result);
+                        my_table.remove_temp_value(getelemptr.index());
+                    }
+
                     // Other instructions (TODO: Not implemented)
                     value_kind => {
-                        return Err(format!(
-                            "Unknown Koopa IR instruction value {:?}",
-                            value_kind
-                        ))
+                        panic!("Unknown Koopa IR instruction value {:?}", value_kind)
                     }
                 }
             }
@@ -474,7 +560,8 @@ impl AssemblyBuildable for FunctionData {
         epilogue_codes.push(format!("\n.{}_ret:", &self.name()[1..]));
 
         // Restore registar ra. (Return address)
-        epilogue_codes.push(format!("  lw\tra, {}(sp)", stack_frame_size - reg_ra_size));
+        epilogue_codes
+            .extend(my_table.load_with_offset(REG_RA, (stack_frame_size - reg_ra_size) as isize));
 
         // Restore callee-saved registers.
         // (Currently no callee-saved registers need to be restored. )
