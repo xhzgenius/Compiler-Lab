@@ -344,13 +344,8 @@ impl IRBuildable for ConstDecl {
                         let aggr_valuedata = get_valuedata(aggr, program, my_ir_generator_info);
                         let addr = create_new_local_value(program, my_ir_generator_info)
                             .alloc(aggr_valuedata.ty().clone());
-                        let store_inst =
-                            create_new_local_value(program, my_ir_generator_info).store(aggr, addr);
-                        insert_local_instructions(
-                            program,
-                            my_ir_generator_info,
-                            [addr, store_inst],
-                        );
+                        insert_local_instructions(program, my_ir_generator_info, [addr]);
+                        aggregate_to_store_insts(aggr, addr, program, my_ir_generator_info)?;
                         addr
                     } else {
                         let addr = program.new_value().global_alloc(aggr);

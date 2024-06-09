@@ -592,7 +592,7 @@ docker run -it --rm -v D:/MyCodes/Compiler-Lab:/root/compiler maxxing/compiler-d
 
 ###### 目标代码（RISC-V汇编代码）生成
 
-目前进度：全局数组初始化没写，GetPtr没写。
+目前进度：全局数组初始化没写。
 
 有些 Value 莫名其妙找不到。哦，原来是本来就从表中移除的临时变量啊，那没事了。
 
