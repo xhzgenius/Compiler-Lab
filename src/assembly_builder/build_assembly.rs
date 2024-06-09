@@ -162,6 +162,22 @@ fn binary_op_to_assembly(
     }
 }
 
+fn init_global_aggregate(aggr: &koopa::ir::values::Aggregate, program: &Program) -> Vec<String> {
+    let mut codes = vec![];
+    for child in aggr.elems() {
+        match program.borrow_value(*child).kind() {
+            koopa::ir::ValueKind::Integer(int) => {
+                codes.push(format!("  .word {}", int.value()));
+            }
+            koopa::ir::ValueKind::Aggregate(a) => {
+                codes.extend(init_global_aggregate(a, program));
+            }
+            _ => panic!("Wrong Aggregate struct. "),
+        }
+    }
+    codes
+}
+
 impl AssemblyBuildable for ValueData {
     /// Used to handle global variable declarations.
     /// The ValueData's kind should be GlobalAlloc. Or it will panic.
@@ -177,8 +193,9 @@ impl AssemblyBuildable for ValueData {
                 koopa::ir::ValueKind::ZeroInit(_) => {
                     codes.push(format!("  .zero {}\n", init_value_data.ty().size()));
                 }
-                koopa::ir::ValueKind::Aggregate(_) => {
-                    codes.push(format!("  .zero {}\n", init_value_data.ty().size()));
+                koopa::ir::ValueKind::Aggregate(aggr) => {
+                    codes.extend(init_global_aggregate(aggr, program));
+                    codes.push(format!("\n"));
                     // TODO: init them one by one.
                 }
                 value_kind => panic!(
